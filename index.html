@@ -1,0 +1,1408 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="description" content="GrowthPilot demo prototype. Fictional agency, clients and example data.">
+<title>GrowthPilot Prototype</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Newsreader:opsz,wght@6..72,300;6..72,400&family=Schibsted+Grotesk:wght@400;500;600;700&display=swap">
+<style>
+/* Layout (v2, now white only): white canvas, floating frosted top bar (bottom tab bar on phones).
+   Every screen opens with a "stage": eyebrow, light serif title, one large value, a small change line,
+   one visual, pill chips. Detail follows as hairline rows on the canvas instead of boxed panels.
+   Patterns adapted from the observed Robinhood / MetaLab reference; GrowthPilot keeps its own name, mark, colours and type. */
+/* One theme only: white canvas, black type. These values ignore any data-theme or dark-mode setting from the host. */
+:root, :root[data-theme] {
+  color-scheme: light;
+  --bg: #FFFFFF; --surface: #FFFFFF; --surface-2: #F6F6F4; --surface-3: #E7E7E4; --hover: rgba(14,17,16,.035);
+  --line: rgba(14,17,16,.11); --line-strong: rgba(14,17,16,.24);
+  --ink: #0A0B0B; --ink-2: #3F4543; --ink-3: #59605D;
+  --accent: #0A6A63; --accent-ink: #FFFFFF; --accent-soft: rgba(10,106,99,.10); --accent-line: rgba(10,106,99,.45);
+  --signal: #8F560A; --signal-soft: rgba(168,106,18,.12);
+  --crit: #B3261E; --crit-soft: rgba(179,38,30,.10);
+  --high: #A54A0C; --high-soft: rgba(184,84,16,.11);
+  --med: #735C00; --med-soft: rgba(126,100,0,.12);
+  --low: #2F5A8A; --low-soft: rgba(52,95,140,.11);
+  --ok: #1D7443; --ok-soft: rgba(29,116,67,.11);
+  --pill: #0A0B0B; --pill-ink: #FFFFFF;
+  --chrome: rgba(255,255,255,.82); --chrome-line: rgba(14,17,16,.10);
+  --overlay: rgba(14,17,16,.42);
+  --strip: #0E1110; --strip-ink: #EEF2F0;
+  --glow: .22;
+  --shadow: 0 24px 64px rgba(14,17,16,.16);
+
+  --font-serif: "Newsreader", "Iowan Old Style", Georgia, "Times New Roman", serif;
+  --font-ui: "Schibsted Grotesk", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 24px; --s6: 32px; --s7: 48px; --s8: 72px;
+  --r-sm: 10px; --r-md: 16px; --r-lg: 24px;
+  --max: 1180px;
+}
+
+* { box-sizing: border-box; }
+html { min-height: 100%; }
+body { margin: 0; min-height: 100%; background: var(--bg); color: var(--ink); font-family: var(--font-ui); font-size: 16px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 30; background: var(--strip); }
+h1, h2, h3, h4 { margin: 0; font-weight: 500; text-wrap: balance; }
+h2 { font-size: 22px; line-height: 1.25; letter-spacing: -0.01em; }
+h3 { font-size: 17px; line-height: 1.3; }
+p { margin: 0; }
+a { color: var(--accent); }
+button, input, select, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 8px; }
+.num { font-variant-numeric: tabular-nums lining-nums; }
+.mono { font-family: var(--font-mono); font-size: 13px; }
+.muted { color: var(--ink-2); }
+.faint { color: var(--ink-3); }
+.small { font-size: 14px; }
+.xs { font-size: 13px; }
+[hidden] { display: none !important; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* Type: light serif display + neutral grotesk, tracking tightens as size grows */
+.display { font-family: var(--font-serif); font-weight: 300; font-size: clamp(40px, 5vw, 66px); line-height: 1.02; letter-spacing: -0.028em; }
+.value { font-family: var(--font-serif); font-weight: 300; font-size: clamp(68px, 8.4vw, 116px); line-height: .92; letter-spacing: -0.045em; display: flex; align-items: baseline; flex-wrap: wrap; column-gap: 14px; font-variant-numeric: lining-nums; }
+.value .unit { font-family: var(--font-ui); font-size: 20px; font-weight: 400; letter-spacing: -0.01em; color: var(--ink-2); line-height: 1.3; }
+.statement { font-size: clamp(24px, 2.5vw, 32px); line-height: 1.2; font-weight: 400; letter-spacing: -0.022em; }
+.eyebrow { font-size: 14px; font-weight: 500; color: var(--ink-2); }
+.change { display: inline-flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 600; color: var(--accent); }
+.change svg { width: 10px; height: 10px; flex: none; }
+.change.neutral { color: var(--ink-2); font-weight: 500; }
+.say { font-size: 18px; line-height: 1.45; max-width: 52ch; }
+.say strong { font-weight: 600; color: var(--ink); }
+.say span { color: var(--ink-2); }
+.lede { font-size: 17px; line-height: 1.55; color: var(--ink-2); max-width: 60ch; }
+.chapter { display: inline-flex; align-items: baseline; gap: 10px; font-size: 13px; font-weight: 500; color: var(--ink-3); }
+.chapter b { font-family: var(--font-mono); font-weight: 500; font-size: 12px; color: var(--ink-3); }
+
+/* Demo strip (kept from v1: always visible, fixed dark tone in both themes) */
+.chrome { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; }
+.demo-strip { background: var(--strip); color: var(--strip-ink); border-bottom: 1px solid rgba(255,255,255,.06);
+  padding-block: 8px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: flex; align-items: center; gap: var(--s4); flex-wrap: wrap; font-size: 13px; }
+.demo-strip .tag { font-family: var(--font-mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; border: 1px solid color-mix(in srgb, var(--strip-ink) 40%, transparent); padding: 2px 9px; border-radius: 99px; }
+.demo-strip .note { opacity: .82; flex: 1 1 260px; min-width: 0; }
+.demo-steps { display: flex; align-items: center; gap: var(--s2); }
+.demo-steps .count { font-family: var(--font-mono); font-size: 12px; opacity: .8; white-space: nowrap; }
+.demo-steps button { background: transparent; color: var(--strip-ink); border: 1px solid color-mix(in srgb, var(--strip-ink) 35%, transparent); border-radius: 99px; padding: 4px 12px; cursor: pointer; white-space: nowrap; }
+.demo-steps button:hover { background: color-mix(in srgb, var(--strip-ink) 12%, transparent); }
+.demo-steps button.next { background: var(--strip-ink); color: var(--strip); border-color: var(--strip-ink); font-weight: 600; }
+.demo-steps button:disabled { opacity: .4; cursor: default; }
+
+/* Floating frosted top bar */
+.topbar { padding: 10px max(16px, env(safe-area-inset-right, 0px)) 0 max(16px, env(safe-area-inset-left, 0px)); pointer-events: none; }
+.topbar-inner { pointer-events: auto; max-width: calc(var(--max) + 24px); margin: 0 auto; height: 58px; display: flex; align-items: center; gap: var(--s4); padding: 0 8px 0 14px; border-radius: 99px; border: 1px solid transparent; transition: background-color .25s, border-color .25s; }
+.chrome.scrolled .topbar-inner { background: var(--chrome); border-color: var(--chrome-line); -webkit-backdrop-filter: blur(18px) saturate(1.4); backdrop-filter: blur(18px) saturate(1.4); }
+.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--ink); flex: none; }
+.brand-mark { width: 32px; height: 32px; flex: none; }
+/* wordmark: the display serif, so the brand reads like the editorial headlines */
+.brand-name { font-family: var(--font-serif); font-weight: 400; font-size: 24px; line-height: 1; letter-spacing: -0.03em; }
+.nav { display: flex; gap: 4px; margin-inline: auto; }
+.nav a { display: inline-flex; align-items: center; height: 40px; padding: 0 16px; border-radius: 99px; color: var(--ink-2); text-decoration: none; font-weight: 500; font-size: 15px; }
+.nav a svg { display: none; }
+.nav a:hover { color: var(--ink); background: var(--hover); }
+.nav a[aria-current="page"] { background: var(--ink); color: var(--bg); }
+.nav .count { margin-left: 8px; font-family: var(--font-mono); font-size: 11px; opacity: .6; }
+.top-right { display: flex; align-items: center; gap: 10px; flex: none; }
+.who { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--ink-2); }
+
+main { min-width: 0; padding-block: 40px 96px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); outline: none; }
+#main:focus, #main:focus-visible { outline: none; }
+.page { max-width: var(--max); margin: 0 auto; display: flex; flex-direction: column; gap: var(--s8); }
+.page.narrow { max-width: 880px; }
+.crumbs { display: flex; gap: 8px; align-items: center; font-size: 14px; color: var(--ink-3); flex-wrap: wrap; }
+.crumbs a { color: var(--ink-3); text-decoration: none; }
+.crumbs a:hover { color: var(--ink); text-decoration: underline; }
+.enter .page > * { animation: rise .5s cubic-bezier(.2,.7,.2,1) both; }
+.enter .page > *:nth-child(2) { animation-delay: .05s; }
+.enter .page > *:nth-child(3) { animation-delay: .1s; }
+.enter .page > *:nth-child(n+4) { animation-delay: .15s; }
+@keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+/* Stage: one value, one change, one visual */
+.stage { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: var(--s7) 64px; align-items: end; }
+.stage.single { grid-template-columns: minmax(0, 1fr); }
+.stage-copy { display: flex; flex-direction: column; gap: var(--s4); min-width: 0; }
+.stage-copy .value { margin-top: var(--s3); }
+.stage-copy .actions { margin-top: var(--s3); }
+.stage-visual { min-width: 0; display: flex; flex-direction: column; gap: var(--s4); }
+.head-row { display: flex; align-items: center; justify-content: space-between; gap: var(--s3); flex-wrap: wrap; }
+
+/* Buttons: pills. Primary = filled ink pill, secondary = outlined pill */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 46px; padding: 0 22px; border-radius: 99px; border: 1px solid var(--line-strong); background: transparent; color: var(--ink); font-weight: 600; font-size: 15px; cursor: pointer; text-decoration: none; white-space: nowrap; transition: border-color .15s, opacity .15s; }
+.btn:hover { border-color: var(--ink-2); }
+.btn svg { width: 16px; height: 16px; }
+.btn.primary { background: var(--pill); border-color: var(--pill); color: var(--pill-ink); }
+.btn.primary:hover { opacity: .88; }
+.btn.ghost { border-color: transparent; color: var(--ink-2); padding: 0 12px; }
+.btn.ghost:hover { color: var(--ink); background: var(--hover); }
+.btn.sm { min-height: 36px; padding: 0 14px; font-size: 14px; }
+.btn:disabled { opacity: .6; cursor: progress; }
+.btn-row { display: flex; gap: var(--s2); flex-wrap: wrap; align-items: center; }
+.linklike { background: none; border: 0; padding: 0; color: var(--accent); cursor: pointer; font-size: 14px; font-weight: 500; text-decoration: underline; text-underline-offset: 3px; }
+
+/* Chips, toggles, filters */
+.chips { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; min-width: 0; padding: 2px; margin: -2px; }
+.chips::-webkit-scrollbar { display: none; }
+.filter { flex: none; height: 38px; padding: 0 16px; border-radius: 99px; border: 1px solid var(--line-strong); background: transparent; color: var(--ink-2); font-size: 14px; font-weight: 500; cursor: pointer; white-space: nowrap; }
+.filter:hover { color: var(--ink); border-color: var(--ink-3); }
+.filter[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.filter .num { margin-left: 6px; opacity: .6; }
+.range { height: 32px; padding: 0 14px; font-family: var(--font-mono); font-size: 12.5px; letter-spacing: .02em; border-color: transparent; }
+.seg-toggle { display: inline-flex; padding: 4px; gap: 2px; border-radius: 99px; background: var(--surface-2); border: 1px solid var(--line); }
+.seg-toggle button { border: 0; background: transparent; height: 36px; padding: 0 16px; border-radius: 99px; font-size: 14px; font-weight: 600; cursor: pointer; color: var(--ink-2); white-space: nowrap; }
+.seg-toggle button:hover { color: var(--ink); }
+.seg-toggle button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+.chip { display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 11px; border-radius: 99px; font-size: 12.5px; font-weight: 600; white-space: nowrap; background: var(--surface-2); color: var(--ink-2); }
+.chip .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.sev-critical { background: var(--crit-soft); color: var(--crit); }
+.sev-high { background: var(--high-soft); color: var(--high); }
+.sev-medium { background: var(--med-soft); color: var(--med); }
+.sev-low { background: var(--low-soft); color: var(--low); }
+.sev-info { background: var(--surface-2); color: var(--ink-2); }
+.sev-icon { width: 12px; height: 12px; flex: none; }
+.st-todo { background: var(--surface-2); color: var(--ink-2); }
+.st-progress { background: var(--low-soft); color: var(--low); }
+.st-waiting { background: var(--signal-soft); color: var(--signal); }
+.st-done { background: var(--ok-soft); color: var(--ok); }
+.ev { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 500; color: var(--ink-2); white-space: nowrap; }
+.ev svg { width: 15px; height: 15px; }
+.example { display: inline-flex; align-items: center; font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--signal); border: 1px solid color-mix(in srgb, var(--signal) 45%, transparent); padding: 2px 9px; border-radius: 99px; white-space: nowrap; }
+
+/* Sections and hairline rows */
+.section { display: flex; flex-direction: column; gap: var(--s4); min-width: 0; }
+.section-head { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--s3) var(--s4); flex-wrap: wrap; border-top: 1px solid var(--line); padding-top: var(--s5); }
+.section-head > div { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.rows { display: flex; flex-direction: column; }
+.row { display: grid; gap: var(--s4); align-items: center; padding: 18px 12px; margin-inline: -12px; border-bottom: 1px solid var(--line); color: inherit; text-decoration: none; }
+.rows .row:last-child { border-bottom-color: transparent; }
+a.row, button.row { cursor: pointer; }
+a.row:hover, button.row:hover { background: var(--hover); }
+button.row { width: calc(100% + 24px); text-align: left; background: none; border: 0; border-bottom: 1px solid var(--line); }
+.row-title { font-weight: 500; font-size: 16px; }
+.row-sub { font-size: 14px; color: var(--ink-3); }
+.row .go { color: var(--ink-3); display: grid; place-items: center; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s7) var(--s6); }
+.split { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 4fr); gap: var(--s7) 64px; align-items: start; }
+
+/* Dashboard */
+.carousel { display: flex; flex-direction: column; gap: var(--s4); min-width: 0; }
+.car-track { display: flex; gap: 16px; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; overscroll-behavior-x: contain; border-radius: var(--r-lg); }
+.car-track::-webkit-scrollbar { display: none; }
+.car-track:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+.car-slide { flex: 0 0 86%; scroll-snap-align: start; min-width: 0; }
+.car-card { display: flex; flex-direction: column; gap: 16px; color: inherit; text-decoration: none; }
+.car-pic { position: relative; aspect-ratio: 16 / 10; border-radius: var(--r-lg); overflow: hidden; border: 1px solid var(--line); background: #050606; }
+.car-pic img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .6s cubic-bezier(.22, 1, .36, 1); }
+a.car-card:hover .car-pic img { transform: scale(1.03); }
+a.car-card:hover .need-t { text-decoration: underline; text-underline-offset: 4px; }
+.car-body { display: grid; grid-template-columns: 48px minmax(0, 1fr) auto; gap: var(--s3); align-items: start; }
+.car-body .need-n { font-size: 34px; }
+.car-body .go { padding-top: 4px; }
+.car-ctrl { display: flex; align-items: center; gap: 12px; }
+.car-btn { width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink); display: grid; place-items: center; cursor: pointer; flex: none; }
+.car-btn:hover:not(:disabled) { background: var(--hover); }
+.car-btn:disabled { opacity: .35; cursor: default; }
+.car-prev svg { transform: rotate(180deg); }
+.car-dots { display: flex; gap: 8px; flex: 1; }
+.car-dot { width: 28px; height: 4px; border-radius: 99px; border: 0; padding: 0; background: var(--line-strong); cursor: pointer; }
+.car-dot { position: relative; overflow: hidden; transition: width .3s ease; }
+.car-dot i { position: absolute; left: 0; top: 0; bottom: 0; width: 0; background: var(--ink); }
+.car-dot[aria-current="true"] { background: var(--ink); width: 44px; }
+.carousel.auto .car-dot[aria-current="true"] { background: var(--line-strong); }
+.car-auto svg { width: 12px; height: 12px; }
+.needs { list-style: none; margin: 0; padding: 0; counter-reset: need; }
+.needs li { border-top: 1px solid var(--line); }
+.needs li:last-child { border-bottom: 1px solid var(--line); }
+.need { display: grid; grid-template-columns: 56px minmax(0, 1fr) auto; gap: var(--s4); align-items: center; padding: 20px 0; color: inherit; text-decoration: none; }
+a.need:hover .need-t { text-decoration: underline; text-underline-offset: 4px; }
+.need-n { font-family: var(--font-serif); font-weight: 300; font-size: 40px; line-height: 1; letter-spacing: -0.03em; color: var(--ink-3); }
+.need-t { font-size: 17px; font-weight: 500; }
+.client-row { grid-template-columns: minmax(0, 2.2fr) minmax(0, 1.4fr) minmax(0, 1.8fr) 24px; }
+.track { height: 4px; border-radius: 99px; background: var(--line); overflow: hidden; flex: 1; min-width: 60px; }
+.track > span { display: block; height: 100%; background: var(--accent); border-radius: 99px; box-shadow: 0 0 10px color-mix(in srgb, var(--accent) calc(var(--glow) * 100%), transparent); }
+.prog-cell { display: flex; align-items: center; gap: 12px; }
+.prio { font-family: var(--font-mono); font-size: 12px; font-weight: 500; height: 26px; min-width: 38px; padding: 0 8px; display: inline-grid; place-items: center; border-radius: 99px; border: 1px solid var(--line-strong); color: var(--ink-2); flex: none; }
+.prio.p1 { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+
+/* Forms */
+.form { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s5) var(--s5); }
+.field { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.field.full { grid-column: 1 / -1; }
+.field label { font-weight: 500; font-size: 14px; color: var(--ink-2); }
+.field .hint { font-size: 14px; color: var(--ink-3); }
+.input, select.input { height: 50px; padding: 0 16px; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--surface-2); width: 100%; font-size: 16px; }
+.input:focus { outline: 2px solid var(--accent); outline-offset: 0; border-color: transparent; }
+.err { color: var(--crit); font-size: 14px; font-weight: 500; }
+.url-bar { display: flex; align-items: center; gap: 8px; padding: 8px 8px 8px 24px; border: 1px solid var(--line-strong); border-radius: 99px; background: var(--surface); }
+.url-bar:focus-within { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.url-bar .pre { color: var(--ink-3); font-family: var(--font-mono); font-size: 15px; }
+.url-bar input { border: 0; outline: 0; height: 52px; flex: 1; min-width: 0; background: transparent; font-size: 22px; letter-spacing: -0.01em; }
+.url-bar:has(input[aria-invalid="true"]) { border-color: var(--crit); }
+.url-bar .btn { min-height: 52px; padding: 0 26px; }
+.check-row { grid-template-columns: 40px minmax(0, 1fr); align-items: baseline; padding: 14px 0; margin: 0; }
+.check-row .n { font-family: var(--font-mono); font-size: 12px; color: var(--ink-3); }
+
+/* Audit run */
+.run { scroll-margin-top: 150px; display: flex; flex-direction: column; gap: var(--s5); border-top: 1px solid var(--line); padding-top: var(--s6); }
+.meter { height: 6px; border-radius: 99px; background: var(--line); overflow: hidden; }
+.meter > span { display: block; height: 100%; width: 0; border-radius: 99px; background: var(--accent); box-shadow: 0 0 16px color-mix(in srgb, var(--accent) calc(var(--glow) * 140%), transparent); transition: width .4s ease-out; }
+.run-steps { display: flex; flex-direction: column; }
+.run-step { display: grid; grid-template-columns: 36px 20px minmax(0,1fr) auto; gap: var(--s3); align-items: center; padding: 12px 0; border-bottom: 1px solid var(--line); color: var(--ink-3); font-size: 15px; }
+.run-step .n { font-family: var(--font-mono); font-size: 12px; }
+.run-step.active { color: var(--ink); }
+.run-step.done { color: var(--ink-2); }
+.run-step .ic { width: 12px; height: 12px; border-radius: 50%; border: 1.5px solid var(--line-strong); justify-self: center; }
+.run-step.active .ic { border: 0; background: var(--accent); box-shadow: 0 0 0 5px var(--accent-soft); animation: pulse 1s ease-in-out infinite; }
+.run-step.done .ic { border: 0; background: var(--accent); }
+@keyframes pulse { 50% { box-shadow: 0 0 0 8px transparent; } }
+
+/* Results: translucent severity columns */
+.spectrum { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.spec { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.spec-n { font-family: var(--font-serif); font-weight: 300; font-size: 44px; line-height: 1; letter-spacing: -0.03em; }
+.spec-bar { position: relative; height: 150px; border-radius: 14px; overflow: hidden; }
+.spec-bar > span { position: absolute; left: 0; right: 0; bottom: 0; border-radius: 14px; }
+.spec-l { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; }
+.finding-row { grid-template-columns: 40px minmax(0, 1fr) 24px; align-items: start; padding-block: 22px; }
+.sev-dot { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; }
+.sev-dot .sev-icon { width: 14px; height: 14px; }
+.f-body { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.f-title { font-weight: 500; font-size: 17px; line-height: 1.35; }
+.f-plain { color: var(--ink-2); font-size: 15px; }
+.f-meta { display: flex; gap: var(--s4); flex-wrap: wrap; align-items: center; font-size: 13px; color: var(--ink-3); }
+.f-area { font-size: 13px; color: var(--ink-3); }
+.see { color: var(--accent); font-weight: 600; }
+.aside { display: flex; flex-direction: column; gap: var(--s6); }
+.legend { display: flex; flex-direction: column; gap: 14px; }
+.legend p { margin-top: 2px; font-size: 14px; }
+.agency-brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 17px; }
+.agency-logo { width: 30px; height: 30px; border-radius: 9px; background: #3442A8; color: #fff; display: grid; place-items: center; font-size: 13px; font-weight: 700; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); padding: var(--s5); display: flex; flex-direction: column; gap: var(--s3); }
+
+/* Plan */
+.segbar { display: flex; gap: 6px; }
+.segbar span { flex: 1; height: 16px; border-radius: 99px; background: var(--surface-3); }
+.segbar span.done { background: var(--accent); box-shadow: 0 0 14px color-mix(in srgb, var(--accent) calc(var(--glow) * 90%), transparent); }
+.segbar span.prog { background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent-line); }
+.segbar span.wait { background: var(--signal-soft); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--signal) 45%, transparent); }
+.seg-legend { display: flex; gap: var(--s4); flex-wrap: wrap; font-size: 13px; color: var(--ink-3); }
+.seg-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: -1px; }
+.task { grid-template-columns: 52px minmax(0, 1fr) 190px; align-items: start; padding-block: 20px; }
+.task:hover { background: transparent; }
+.t-title { font-weight: 500; font-size: 17px; }
+.t-obj { font-size: 15px; color: var(--ink-2); margin-top: 2px; }
+.t-meta { display: flex; gap: var(--s4); flex-wrap: wrap; align-items: center; margin-top: 10px; font-size: 13px; color: var(--ink-3); }
+.avatar { width: 24px; height: 24px; border-radius: 50%; display: inline-grid; place-items: center; font-size: 10.5px; font-weight: 700; background: var(--surface-3); color: var(--ink-2); flex: none; }
+.status-select { height: 40px; padding: 0 36px 0 16px; border-radius: 99px; border: 1px solid var(--line-strong); background-color: transparent; font-size: 14px; font-weight: 600; width: 100%; cursor: pointer; appearance: none; -webkit-appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, currentColor 50%), linear-gradient(135deg, currentColor 50%, transparent 50%); background-position: calc(100% - 20px) 17px, calc(100% - 15px) 17px; background-size: 5px 5px; background-repeat: no-repeat; }
+.status-select option { background: var(--surface); color: var(--ink); }
+.status-select.s-done { color: var(--ok); border-color: color-mix(in srgb, var(--ok) 50%, transparent); }
+.status-select.s-progress { color: var(--low); border-color: color-mix(in srgb, var(--low) 50%, transparent); }
+.status-select.s-waiting { color: var(--signal); border-color: color-mix(in srgb, var(--signal) 50%, transparent); }
+
+/* Workspace */
+.tabs { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; }
+.tabs::-webkit-scrollbar { display: none; }
+.tabs a { flex: none; display: inline-flex; align-items: center; height: 38px; padding: 0 16px; border-radius: 99px; text-decoration: none; color: var(--ink-2); font-weight: 500; font-size: 14px; border: 1px solid var(--line); white-space: nowrap; }
+.tabs a:hover { color: var(--ink); border-color: var(--line-strong); }
+.tabs a[aria-current="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s4); }
+.stat { display: flex; flex-direction: column; gap: 4px; }
+.stat b { font-family: var(--font-serif); font-weight: 300; font-size: 48px; line-height: 1; letter-spacing: -0.03em; }
+.stat span { font-size: 13px; color: var(--ink-3); }
+.progress-band { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: var(--s6); align-items: center; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: var(--s5) 0; }
+.progress-band .value { font-size: clamp(52px, 6vw, 76px); }
+
+/* Motion films: muted looping product films, our own motion graphics */
+.showcase { display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 7fr); gap: var(--s6) 56px; align-items: center; }
+.film-steps { display: flex; flex-direction: column; }
+.film-step { display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 4px 12px; text-align: left; background: none; border: 0; border-top: 1px solid var(--line); padding: 20px 4px; cursor: pointer; color: var(--ink-3); }
+.film-step:last-child { border-bottom: 1px solid var(--line); }
+.film-step b { font-family: var(--font-mono); font-size: 12px; font-weight: 500; padding-top: 6px; }
+.film-step strong { font-size: 20px; font-weight: 500; letter-spacing: -0.01em; color: var(--ink-2); }
+.film-step span { grid-column: 2; font-size: 14px; }
+.film-step:hover strong { color: var(--ink); }
+.film-step[aria-pressed="true"] { color: var(--ink-2); }
+.film-step[aria-pressed="true"] strong { color: var(--ink); }
+.film-step[aria-pressed="true"] b { color: var(--accent); }
+.film-step .film-prog { grid-column: 2; height: 2px; border-radius: 2px; background: var(--line); overflow: hidden; margin-top: 10px; }
+.film-step .film-prog i { display: block; height: 100%; width: 0; background: var(--accent); }
+.film-band { display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 7fr); gap: var(--s5) 56px; align-items: center; border-top: 1px solid var(--line); padding-top: var(--s6); }
+.film-band-copy { display: flex; flex-direction: column; gap: var(--s3); max-width: 420px; }
+.film-fig { margin: 0; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.film { position: relative; border-radius: var(--r-lg); overflow: hidden; background: #050606; border: 1px solid var(--line); aspect-ratio: 16 / 10; }
+.film video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.film.wipe { clip-path: inset(0 0 100% 0 round var(--r-lg)); }
+.film.wipe.in { clip-path: inset(0 0 0 0 round var(--r-lg)); transition: clip-path .9s cubic-bezier(.22, 1, .36, 1); }
+.film-ctrl { position: absolute; right: 12px; bottom: 12px; height: 34px; padding: 0 14px; border-radius: 99px; background: rgba(5,6,6,.62); color: #F3F5F4; border: 1px solid rgba(255,255,255,.18); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); font-size: 13px; font-weight: 600; display: inline-flex; gap: 7px; align-items: center; cursor: pointer; }
+.film-ctrl svg { width: 12px; height: 12px; }
+.film-ctrl:hover { background: rgba(5,6,6,.8); }
+.film-cap { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.film-cap > div > span { font-size: 15px; font-weight: 500; }
+.film-cap b { font-family: var(--font-mono); font-size: 12px; font-weight: 500; color: var(--ink-3); margin-right: 8px; }
+.film-cap p { font-size: 14px; color: var(--ink-3); margin-top: 2px; }
+
+/* Charts: thin bright line, soft glow, haloed endpoint, dotted grid */
+.chart svg { width: 100%; height: auto; display: block; overflow: visible; }
+.chart .grid line { stroke: var(--line-strong); stroke-width: 1.2; stroke-dasharray: 0.5 6; stroke-linecap: round; }
+.chart .axis text { fill: var(--ink-3); font-family: var(--font-mono); font-size: 11px; }
+.chart .series { fill: none; stroke: var(--accent); stroke-width: 2.25; stroke-linejoin: round; stroke-linecap: round; }
+.chart .series-glow { fill: none; stroke: var(--accent); stroke-width: 7; stroke-linejoin: round; stroke-linecap: round; opacity: var(--glow); filter: blur(6px); }
+.chart .draw { stroke-dasharray: 1; stroke-dashoffset: 1; animation: draw 1s cubic-bezier(.3,.6,.2,1) .15s forwards; }
+@keyframes draw { to { stroke-dashoffset: 0; } }
+.chart .halo { fill: var(--accent); opacity: .18; }
+.chart .endpoint { fill: var(--accent); stroke: var(--bg); stroke-width: 2.5; }
+.chart .marker line { stroke: var(--ink-3); stroke-dasharray: 2 4; }
+.chart .marker text { fill: var(--ink-2); font-family: var(--font-ui); font-size: 12px; font-weight: 500; }
+.chart .endlabel { fill: var(--ink); font-family: var(--font-ui); font-size: 13px; font-weight: 600; }
+.chart-note { font-size: 14px; color: var(--ink-3); max-width: 62ch; }
+
+/* Report: editorial reading column */
+.report { max-width: 760px; margin: 0 auto; width: 100%; background: var(--surface); border: 1px solid var(--line); border-radius: 28px; }
+.report-head { padding: 48px 56px 40px; display: flex; flex-direction: column; gap: var(--s5); }
+.report-head .display { font-size: clamp(32px, 4vw, 46px); line-height: 1.08; }
+.report-sec { padding: 32px 56px; border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: var(--s4); }
+.report-sec h2 { font-size: 24px; font-weight: 400; letter-spacing: -0.02em; }
+.done-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; }
+.done-list li { display: grid; grid-template-columns: 80px minmax(0,1fr); gap: var(--s3); padding: 12px 0; border-bottom: 1px solid var(--line); }
+.done-list li:last-child { border-bottom: 0; }
+.done-list .d { font-family: var(--font-mono); font-size: 12.5px; color: var(--ink-3); padding-top: 3px; }
+.ba-row { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr) minmax(0, 1fr); gap: 6px var(--s4); padding: 16px 0; border-bottom: 1px solid var(--line); align-items: start; }
+.ba-row:last-of-type { border-bottom: 0; }
+.ba-m { display: flex; flex-direction: column; gap: 2px; }
+.ba-name { font-weight: 500; }
+.ba-v { display: flex; flex-direction: column; gap: 2px; }
+.ba-v .num { font-size: 17px; }
+.ba-v.now .num { font-weight: 600; }
+.ba-bars { grid-column: 2 / -1; display: flex; flex-direction: column; gap: 4px; }
+.ba-bars i { display: block; height: 6px; border-radius: 99px; background: var(--line-strong); }
+.ba-bars i.now { background: var(--accent); box-shadow: 0 0 10px color-mix(in srgb, var(--accent) calc(var(--glow) * 100%), transparent); }
+.callout { border-radius: var(--r-md); padding: var(--s5); background: var(--surface-2); display: flex; flex-direction: column; gap: 8px; font-size: 15px; }
+.callout.ai { background: var(--accent-soft); }
+.callout h3 { font-size: 15px; font-weight: 600; }
+.callout ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px; }
+.demo-foot { max-width: var(--max); margin: 64px auto 0; padding-top: var(--s5); border-top: 1px solid var(--line); font-size: 13px; color: var(--ink-3); display: flex; flex-direction: column; gap: 4px; }
+
+/* Evidence drawer: plain sentence first, then the evidence */
+.scrim { position: fixed; inset: 0; background: var(--overlay); z-index: 40; animation: fade .2s ease-out; }
+.drawer { position: fixed; top: 0; right: 0; bottom: 0; width: min(620px, 100%); background: var(--surface); z-index: 41; display: flex; flex-direction: column; border-left: 1px solid var(--line); border-radius: 28px 0 0 28px; box-shadow: var(--shadow); animation: slide .26s cubic-bezier(.2,.7,.2,1); padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); padding-right: env(safe-area-inset-right, 0px); }
+@keyframes slide { from { transform: translateX(28px); opacity: .5; } to { transform: none; opacity: 1; } }
+@keyframes fade { from { opacity: 0; } }
+.drawer-top { display: flex; justify-content: space-between; gap: var(--s3); align-items: center; padding: 20px 28px 0; }
+.drawer-body { padding: 24px 28px 48px; overflow-y: auto; display: flex; flex-direction: column; gap: 36px; }
+.explain { display: flex; flex-direction: column; gap: 14px; }
+.explain h2 { font-size: clamp(24px, 2.4vw, 30px); line-height: 1.2; font-weight: 500; letter-spacing: -0.02em; }
+.explain p { color: var(--ink-2); font-size: 16px; }
+.explain .btn-row { margin-top: 6px; }
+.icon-btn { width: 40px; height: 40px; border-radius: 99px; border: 1px solid var(--line); background: transparent; display: grid; place-items: center; cursor: pointer; color: var(--ink-2); flex: none; }
+.icon-btn:hover { border-color: var(--line-strong); color: var(--ink); }
+.ev-block { display: flex; flex-direction: column; gap: 12px; }
+.ev-label { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--ink); padding-top: 18px; border-top: 1px solid var(--line); }
+.ev-label b { font-family: var(--font-mono); font-weight: 500; font-size: 12px; color: var(--ink-3); }
+.ev-label.sug { color: var(--accent); }
+.ev-label.lim { color: var(--signal); }
+.ev-label svg { width: 15px; height: 15px; }
+.observed-box { border: 1px solid var(--line); border-radius: var(--r-md); overflow: hidden; background: var(--surface-2); }
+.observed-box .src { display: flex; justify-content: space-between; gap: var(--s3); padding: 10px 14px; border-bottom: 1px solid var(--line); font-size: 13px; color: var(--ink-2); flex-wrap: wrap; align-items: center; }
+.observed-box pre { margin: 0; padding: 14px; font-family: var(--font-mono); font-size: 13px; line-height: 1.65; white-space: pre-wrap; word-break: break-word; color: var(--ink); }
+.observed-box pre mark { background: var(--crit-soft); color: var(--crit); border-radius: 4px; padding: 0 3px; }
+.suggest-box { border: 1px solid var(--accent-line); border-radius: var(--r-md); padding: 14px 16px; background: var(--accent-soft); }
+.kv { display: grid; grid-template-columns: 140px minmax(0,1fr); gap: 10px var(--s4); font-size: 14px; padding-top: 18px; border-top: 1px solid var(--line); margin: 0; }
+.kv dt { color: var(--ink-3); }
+.kv dd { margin: 0; }
+.confidence { display: inline-flex; gap: 3px; vertical-align: middle; margin-right: 8px; }
+.confidence i { width: 16px; height: 6px; border-radius: 99px; background: var(--line-strong); }
+.confidence i.on { background: var(--accent); }
+
+/* Toast + confirm */
+.toast { position: fixed; left: 50%; bottom: calc(28px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--pill); color: var(--pill-ink); padding: 13px 22px; border-radius: 99px; z-index: 60; font-size: 14px; font-weight: 500; box-shadow: var(--shadow); max-width: calc(100% - 32px); width: max-content; animation: fade .2s ease-out; }
+.confirm { position: fixed; inset: 0; display: grid; place-items: center; z-index: 50; background: var(--overlay); padding: 16px; animation: fade .2s ease-out; }
+.confirm .box { background: var(--surface); border: 1px solid var(--line); border-radius: 28px; padding: 32px; max-width: 460px; width: 100%; display: flex; flex-direction: column; gap: var(--s4); box-shadow: var(--shadow); }
+.confirm .box h2 { font-family: var(--font-serif); font-weight: 300; font-size: 34px; line-height: 1.1; letter-spacing: -0.02em; }
+
+/* Mobile tab bar */
+.mobile-nav { display: none; }
+@media (max-width: 1080px) {
+  .showcase { grid-template-columns: minmax(0, 1fr); }
+  .showcase .film-fig { order: -1; }
+  .film-band { grid-template-columns: minmax(0, 1fr); }
+  .split { grid-template-columns: minmax(0, 1fr); }
+  .grid-3 { grid-template-columns: minmax(0, 1fr); gap: var(--s7); }
+}
+@media (max-width: 960px) {
+  .stage { grid-template-columns: minmax(0, 1fr); align-items: start; }
+}
+@media (max-width: 860px) {
+  .nav, .who { display: none; }
+  .top-right { margin-left: auto; }
+  .topbar-inner { height: 54px; }
+  main { padding-block: 20px calc(110px + env(safe-area-inset-bottom, 0px)); }
+  .page { gap: 56px; }
+  .mobile-nav { display: grid; grid-template-columns: repeat(4, 1fr); position: fixed; left: 0; right: 0; bottom: 0; z-index: 25; background: var(--chrome); -webkit-backdrop-filter: blur(18px) saturate(1.4); backdrop-filter: blur(18px) saturate(1.4); border-top: 1px solid var(--chrome-line); padding-bottom: env(safe-area-inset-bottom, 0px); padding-left: env(safe-area-inset-left, 0px); padding-right: env(safe-area-inset-right, 0px); }
+  .mobile-nav a { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 10px 4px 9px; font-size: 11.5px; font-weight: 500; color: var(--ink-3); text-decoration: none; }
+  .mobile-nav a svg { width: 22px; height: 22px; }
+  .mobile-nav a[aria-current="page"] { color: var(--ink); font-weight: 600; }
+}
+@media (max-width: 640px) {
+  .value { font-size: 72px; }
+  .display { font-size: 40px; }
+  .form { grid-template-columns: minmax(0, 1fr); }
+  .client-row { grid-template-columns: minmax(0, 1fr) 20px; gap: 6px var(--s3); }
+  .client-row .prog-cell { grid-column: 1; grid-row: 2; }
+  .client-row .next { grid-column: 1; grid-row: 3; }
+  .client-row .go { grid-column: 2; grid-row: 1 / 4; }
+  .task { grid-template-columns: 44px minmax(0, 1fr); }
+  .task .t-status { grid-column: 2; }
+  .spec-bar { height: 96px; }
+  .spec-n { font-size: 34px; }
+  .url-bar { flex-wrap: wrap; padding: 8px; border-radius: 28px; }
+  .url-bar .pre { padding-left: 14px; }
+  .url-bar input { font-size: 18px; height: 48px; }
+  .url-bar .btn { width: 100%; }
+  .progress-band { grid-template-columns: minmax(0, 1fr); gap: var(--s3); }
+  .stats b { font-size: 40px; }
+  .report { border-radius: 22px; }
+  .report-head { padding: 28px 20px 24px; }
+  .report-sec { padding: 24px 20px; }
+  .ba-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .ba-m { grid-column: 1 / -1; }
+  .ba-bars { grid-column: 1 / -1; }
+  .drawer { border-radius: 0; }
+  .drawer-top { padding: 16px 20px 0; }
+  .drawer-body { padding: 20px 20px 40px; }
+  .kv { grid-template-columns: minmax(0,1fr); gap: 2px; }
+  .kv dd { margin-bottom: 10px; }
+  .hide-sm { display: none; }
+  .demo-strip .note, .demo-steps .tour-label, .demo-steps .tour-step { display: none; }
+  .demo-strip { gap: 10px; }
+  .demo-steps { flex: 1; justify-content: space-between; }
+  .need { grid-template-columns: 40px minmax(0, 1fr); }
+  .need .go { display: none; }
+  .need-n { font-size: 32px; }
+  .confirm .box { padding: 24px; }
+  .confirm .btn-row .btn { flex: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .001ms !important; animation-delay: 0s !important; transition: none !important; }
+}
+</style>
+
+<div class="chrome" id="chrome">
+  <div class="demo-strip" role="region" aria-label="Demo notice">
+    <span class="tag">Demo prototype</span>
+    <span class="note">Fictional agency, clients and example data. Nothing on these screens is a real measurement.</span>
+    <div class="demo-steps">
+      <button type="button" id="tour-prev" aria-label="Previous demo step">Back</button>
+      <span class="count" id="tour-count" aria-live="polite"></span>
+      <button type="button" class="next" id="tour-next">Next</button>
+    </div>
+  </div>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="#dashboard" aria-label="GrowthPilot overview">
+        <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><defs><linearGradient id="gp-tile" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1D2422"/><stop offset="1" stop-color="#090B0A"/></linearGradient></defs><rect width="32" height="32" rx="9.5" fill="url(#gp-tile)"/><rect x=".5" y=".5" width="31" height="31" rx="9" fill="none" stroke="#fff" stroke-opacity=".1"/><path d="M21.66 10.34A8 8 0 1 0 24 16H17" fill="none" stroke="#F3F5F4" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/><circle cx="21.66" cy="10.34" r="2.4" fill="#45E3CB"/></svg>
+        <span class="brand-name">GrowthPilot</span>
+      </a>
+      <nav class="nav" id="nav" aria-label="Main"></nav>
+      <div class="top-right">
+        <span class="who"><span>Northfield Digital</span><span class="avatar" title="Signed in as Sam Okafor (example)">SO</span></span>
+      </div>
+    </div>
+  </header>
+</div>
+
+<main id="main" tabindex="-1">
+  <div id="view"></div>
+  <footer class="demo-foot">
+    <span>GrowthPilot demo prototype. Northfield Digital, its clients and everyone named are fictional. Signed in as Sam Okafor (example).</span>
+    <span>The audit, crawl, robots.txt, DNS and speed checks are simulated with fixed results. There are no live Google Search Console, Analytics, Business Profile or AI connections, and no accounts, database or back end. Changes reset when the page reloads. The motion films are our own animations with example data, not recordings of real sites.</span>
+  </footer>
+</main>
+<nav class="mobile-nav" id="mobile-nav" aria-label="Main"></nav>
+<div id="layer"></div>
+
+<script>
+(function () {
+'use strict';
+
+/* ---------- Icons ---------- */
+const I = {
+  home: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6h-4v6H5a1 1 0 0 1-1-1z"/></svg>',
+  audit: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2M8.5 11h5M11 8.5v5"/></svg>',
+  clients: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="14" rx="2"/><path d="M3.5 9.5h17M8 14h4"/></svg>',
+  report: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3.5h7l4 4V20a.5.5 0 0 1-.5.5h-10A.5.5 0 0 1 7 20z"/><path d="M14 3.5v4h4M10 12.5h5M10 16h5"/></svg>',
+  plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>',
+  arrow: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>',
+  chev: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>',
+  close: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>',
+  eye: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.8"/></svg>',
+  key: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="15" r="4"/><path d="m11 12 8.5-8.5M16 7l2.5 2.5"/></svg>',
+  person: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.6"/><path d="M5 20c.8-3.8 3.6-5.6 7-5.6s6.2 1.8 7 5.6"/></svg>',
+  spark: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5 13.8 10 20.5 12l-6.7 2L12 20.5 10.2 14 3.5 12l6.7-2z"/></svg>',
+  flag: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 21V4M5 4h11l-2 4 2 4H5"/></svg>',
+  moon: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg>',
+  sun: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/></svg>'
+};
+const SEV_SHAPE = {
+  critical: '<svg class="sev-icon" viewBox="0 0 12 12" aria-hidden="true"><path d="M6 1 11 10H1z" fill="currentColor"/></svg>',
+  high: '<svg class="sev-icon" viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="2" width="8" height="8" transform="rotate(45 6 6)" fill="currentColor"/></svg>',
+  medium: '<svg class="sev-icon" viewBox="0 0 12 12" aria-hidden="true"><rect x="1.5" y="1.5" width="9" height="9" rx="1.5" fill="currentColor"/></svg>',
+  low: '<svg class="sev-icon" viewBox="0 0 12 12" aria-hidden="true"><circle cx="6" cy="6" r="4.5" fill="currentColor"/></svg>',
+  info: '<svg class="sev-icon" viewBox="0 0 12 12" aria-hidden="true"><circle cx="6" cy="6" r="4.2" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>'
+};
+const SEV_LABEL = { critical: 'Critical', high: 'High', medium: 'Medium', low: 'Low', info: 'For information' };
+const SEV_COLOR = { critical: 'var(--crit)', high: 'var(--high)', medium: 'var(--med)', low: 'var(--low)', info: 'var(--line-strong)' };
+const EV = {
+  observed: { label: 'Observed on the site', icon: I.eye },
+  access: { label: 'Needs client access to confirm', icon: I.key },
+  judgement: { label: 'Reviewer judgement', icon: I.person }
+};
+const STATUS = { todo: 'To do', progress: 'In progress', waiting: 'Waiting on client', done: 'Done' };
+
+/* ---------- Example data (all fictional) ---------- */
+const PROSPECT = { name: 'Maple & Main Physiotherapy', url: 'mapleandmain-physio.example', category: 'Physiotherapy clinic', location: 'Halden, single location', service: 'Sports injury rehab', competitors: 'riverside-physio.example, coreworks-clinic.example' };
+
+const FINDINGS = [
+  { id: 'f1', sev: 'critical', area: 'Search visibility', ev: 'observed', effort: 'Small', confidence: 3,
+    title: 'Six of nine service pages tell search engines not to index them',
+    plain: 'Pages like “Sports injury rehab” and “Back pain treatment” carry a noindex tag, so Google is asked to leave them out of search results.',
+    evidenceSrc: 'mapleandmain-physio.example/services/sports-injury-rehab · fetched 28 Oct 2026, 09:14',
+    evidence: '&lt;head&gt;\n  &lt;title&gt;Sports Injury Rehab | Maple &amp; Main&lt;/title&gt;\n  <mark>&lt;meta name="robots" content="noindex, follow"&gt;</mark>\n&lt;/head&gt;',
+    evidenceNote: 'Same tag found on 6 of 9 pages under /services/. The 3 pages without it were published after March 2026.',
+    why: 'A page must be indexed to appear in Google Search, including AI Overviews. A noindex rule removes it from results once Google recrawls the page.',
+    sources: [{ t: 'Google Search Central: AI features and your website', u: 'https://developers.google.com/search/docs/appearance/ai-features' }, { t: 'Google Search Central: SEO Starter Guide', u: 'https://developers.google.com/search/docs/fundamentals/seo-starter-guide' }],
+    action: 'Remove the noindex tag from the six service pages, then request indexing in Search Console. Likely a leftover setting from the site’s staging build.',
+    limits: 'We can see the tag, but not how much search traffic these pages would get once indexed. That depends on demand and competition we have not measured.',
+    ai: 'Explanation drafted by AI from the check result; reviewed by Sam Okafor.' },
+  { id: 'f2', sev: 'high', area: 'AI search readiness', ev: 'observed', effort: 'Small', confidence: 3,
+    title: 'ChatGPT’s search crawler is blocked, while its training crawler is allowed',
+    plain: 'The site’s robots.txt blocks OAI-SearchBot, which ChatGPT uses to find pages it can cite. GPTBot, used for model training, is allowed. Most owners want the opposite.',
+    evidenceSrc: 'mapleandmain-physio.example/robots.txt · fetched 28 Oct 2026, 09:12',
+    evidence: 'User-agent: GPTBot\nAllow: /\n\n<mark>User-agent: OAI-SearchBot\nDisallow: /</mark>\n\nUser-agent: *\nAllow: /',
+    evidenceNote: 'Googlebot, Bingbot and PerplexityBot are allowed.',
+    why: 'OpenAI documents OAI-SearchBot and GPTBot as separate crawlers with separate robots.txt controls. Blocking OAI-SearchBot keeps pages out of ChatGPT search answers.',
+    sources: [{ t: 'OpenAI: Overview of OpenAI crawlers', u: 'https://developers.openai.com/api/docs/bots.md' }],
+    action: 'Ask the clinic which use they prefer, then allow OAI-SearchBot (and block GPTBot if they want to opt out of training).',
+    limits: 'Allowing the crawler makes the site eligible to be cited. It does not guarantee ChatGPT will cite it.',
+    ai: 'Explanation drafted by AI from the check result; reviewed by Sam Okafor.' },
+  { id: 'f3', sev: 'high', area: 'Speed', ev: 'observed', effort: 'Medium', confidence: 2,
+    title: 'The homepage loads slowly on mobile',
+    plain: 'In a lab test the main image took 4.1 seconds to appear on a mid-range phone. Google’s “good” threshold is 2.5 seconds.',
+    evidenceSrc: 'Lab test, simulated mid-range phone on 4G · 28 Oct 2026, 09:16',
+    evidence: 'Largest Contentful Paint   <mark>4.1 s</mark>   (good: ≤ 2.5 s)\nLargest element            hero-clinic.jpg, 2.8 MB, 4000×2667\nCumulative Layout Shift    0.04       (good: < 0.1)',
+    evidenceNote: 'One lab run. Real visitors’ experience can differ; field data needs Search Console access.',
+    why: 'Google lists Core Web Vitals, including Largest Contentful Paint, as part of page experience. Relevance still matters more than speed for ranking.',
+    sources: [{ t: 'Google Search Central: Understanding Core Web Vitals', u: 'https://developers.google.com/search/docs/appearance/core-web-vitals' }],
+    action: 'Resize and compress the hero image (target under 300 KB) and serve a modern format.',
+    limits: 'Lab results vary between runs. Faster pages may help visitors stay, but we cannot predict a ranking or booking change from this alone.',
+    ai: 'Explanation drafted by AI from the check result; reviewed by Sam Okafor.' },
+  { id: 'f4', sev: 'high', area: 'Tracking', ev: 'access', effort: 'Small', confidence: 1,
+    title: 'Online booking requests may not be tracked',
+    plain: 'A Google Analytics tag is on the site, but we found no event firing when the booking form is sent. Without it, nobody can see which marketing brings in patients.',
+    evidenceSrc: 'Test submission of the booking form in a clean browser · 28 Oct 2026, 09:20',
+    evidence: 'GA4 tag detected        G-XXXXXXX (page_view only)\nForm submit event       <mark>none observed</mark>\nThank-you page          none (form shows inline message)',
+    evidenceNote: 'The clinic may track bookings another way, for example in its booking software. Confirming needs GA4 access.',
+    why: 'Tracking what visitors do, not just page views, is the basis for judging which channels produce leads.',
+    sources: [],
+    action: 'With GA4 access, add a booking-request event and mark it as a key event. Test it with a real submission.',
+    limits: 'This is an inference from the outside. We could be wrong if tracking happens inside the booking system.',
+    ai: 'Explanation drafted by AI from the check result; reviewed by Sam Okafor.' },
+  { id: 'f5', sev: 'medium', area: 'Local', ev: 'access', effort: 'Small', confidence: 2,
+    title: 'The clinic’s address is written two different ways',
+    plain: 'The site footer says “12 Main St, Unit 3”. The contact page says “Unit 3, 12 Main Street”. Business listings should match the business’s real-world details exactly.',
+    evidenceSrc: 'Footer and /contact · fetched 28 Oct 2026, 09:14',
+    evidence: 'footer   12 Main St, Unit 3, Halden\n/contact Unit 3, 12 Main Street, Halden\nLocalBusiness structured data   <mark>not found</mark>',
+    evidenceNote: 'We have not seen the Google Business Profile. Comparing it needs the client to share access.',
+    why: 'Google asks that Business Profiles represent the business as it is consistently known. Structured data must match what is visible on the page.',
+    sources: [{ t: 'Google Business Profile: Guidelines for representing your business', u: 'https://support.google.com/business/answer/3038177?hl=en' }, { t: 'Google Search Central: Structured data policies', u: 'https://developers.google.com/search/docs/appearance/structured-data/sd-policies' }],
+    action: 'Pick one address format, use it everywhere, and add LocalBusiness structured data that matches it.',
+    limits: 'Consistency is good practice. Its effect on local rankings is not something Google quantifies.',
+    ai: 'Explanation drafted by AI from the check result; reviewed by Sam Okafor.' },
+  { id: 'f6', sev: 'medium', area: 'Conversion', ev: 'judgement', effort: 'Medium', confidence: 1,
+    title: 'Booking takes 11 form fields and the phone number is hard to find on mobile',
+    plain: 'New patients must fill in 11 fields before asking for an appointment, and the phone number only appears in the footer on small screens.',
+    evidenceSrc: 'Manual review on a 390 px wide screen · 28 Oct 2026',
+    evidence: 'Booking form fields     11 (7 required)\nPhone number visible    footer only, below 3 screens of scroll\nClick-to-call link      none',
+    evidenceNote: 'This is a reviewer’s judgement of friction, not a measured drop-off.',
+    why: 'Fewer steps generally make forms easier to complete, but the right number depends on what the clinic needs before a first visit.',
+    sources: [],
+    action: 'Test a shorter first-step form (name, phone, reason for visit) and add a tap-to-call button to the mobile header.',
+    limits: 'Only a before-and-after test with enough bookings would show whether this changes conversion.',
+    ai: 'Explanation drafted by AI from the reviewer’s notes; reviewed by Sam Okafor.' },
+  { id: 'f7', sev: 'low', area: 'Search visibility', ev: 'observed', effort: 'Small', confidence: 3,
+    title: '14 pages share the same title',
+    plain: 'Blog posts all use “Maple & Main Physiotherapy” as their page title, so search results can’t tell them apart.',
+    evidenceSrc: 'Crawl of 41 pages · 28 Oct 2026',
+    evidence: '&lt;title&gt;Maple &amp; Main Physiotherapy&lt;/title&gt;   <mark>× 14 pages</mark> (all under /blog/)',
+    evidenceNote: '',
+    why: 'Google recommends a unique, descriptive title for each page.',
+    sources: [{ t: 'Google Search Central: SEO Starter Guide', u: 'https://developers.google.com/search/docs/fundamentals/seo-starter-guide' }],
+    action: 'Write a specific title for each post, for example “5 exercises after an ankle sprain | Maple & Main”.',
+    limits: 'Google may rewrite titles it shows. Unique titles help, but do not control what appears.',
+    ai: 'Explanation drafted by AI from the check result; reviewed by Sam Okafor.' },
+  { id: 'f8', sev: 'low', area: 'Email', ev: 'observed', effort: 'Small', confidence: 2,
+    title: 'The domain has no DMARC record',
+    plain: 'Appointment reminders sent from the clinic’s domain are more likely to land in spam, and the domain is easier to spoof.',
+    evidenceSrc: 'DNS lookup · 28 Oct 2026',
+    evidence: 'SPF     v=spf1 include:_spf.mailhost.example ~all   (found)\nDKIM    selector s1 (found)\n<mark>DMARC   no record at _dmarc.mapleandmain-physio.example</mark>',
+    evidenceNote: '',
+    why: 'Major mailbox providers ask senders to authenticate mail, including a DMARC policy for bulk senders.',
+    sources: [{ t: 'Yahoo Sender Hub: Best practices', u: 'https://senders.yahooinc.com/best-practices' }],
+    action: 'Publish a DMARC record starting with p=none and reporting, then tighten it after review.',
+    limits: 'We cannot see the clinic’s actual spam rates without access to their sending tools.',
+    ai: 'Explanation drafted by AI from the check result; reviewed by Sam Okafor.' },
+  { id: 'f9', sev: 'info', area: 'AI search readiness', ev: 'observed', effort: '—', confidence: 3,
+    title: 'No llms.txt file (no action needed)',
+    plain: 'Some tools suggest adding an llms.txt file for AI systems. It is a proposal, not an adopted standard, and Google has said it does not use it. We note it for completeness only.',
+    evidenceSrc: 'mapleandmain-physio.example/llms.txt · 28 Oct 2026',
+    evidence: 'HTTP 404 Not Found',
+    evidenceNote: 'Not counted as an issue.',
+    why: 'llms.txt has no documented effect on search or AI answer visibility.',
+    sources: [{ t: 'Search Engine Roundtable: Google on llms.txt', u: 'https://seroundtable.com/google-ai-llms-txt-39607.html' }],
+    action: 'None.',
+    limits: '',
+    ai: 'Explanation written by the GrowthPilot team (fixed text).' }
+];
+
+const TASKS = [
+  { id: 't1', f: 'f1', p: 1, group: 'now', title: 'Remove noindex from six service pages', obj: 'Make every service page eligible for search results', owner: 'SO', due: 'Week 1', s1: 'todo', s3: 'done', done3: '3 Sep' },
+  { id: 't2', f: 'f2', p: 1, group: 'now', title: 'Agree AI crawler preferences with the clinic and update robots.txt', obj: 'Let ChatGPT search find and cite the site, if the clinic agrees', owner: 'SO', due: 'Week 1', s1: 'todo', s3: 'done', done3: '5 Sep' },
+  { id: 't3', f: 'f4', p: 1, group: 'now', title: 'Get GA4 access and track booking requests', obj: 'Start measuring how many patients ask to book online', owner: 'LM', due: 'Week 2', s1: 'todo', s3: 'done', done3: '2 Sep' },
+  { id: 't4', f: 'f3', p: 2, group: 'next', title: 'Compress and resize the homepage hero image', obj: 'Bring mobile LCP under 2.5 s in lab tests', owner: 'RT', due: 'Week 3', s1: 'todo', s3: 'done', done3: '19 Sep' },
+  { id: 't5', f: 'f5', p: 2, group: 'next', title: 'Standardise the address and add LocalBusiness structured data', obj: 'One consistent business identity across site and listings', owner: 'LM', due: 'Week 4', s1: 'todo', s3: 'waiting', note3: 'Waiting for Business Profile access from the clinic' },
+  { id: 't6', f: 'f6', p: 2, group: 'next', title: 'Design a shorter first-step booking form', obj: 'Fewer steps between “I need help” and a booking request', owner: 'RT', due: 'Week 5', s1: 'todo', s3: 'progress' },
+  { id: 't7', f: 'f6', p: 2, group: 'next', title: 'Add a tap-to-call button to the mobile header', obj: 'Let mobile visitors call without scrolling', owner: 'RT', due: 'Week 5', s1: 'todo', s3: 'done', done3: '8 Oct' },
+  { id: 't8', f: 'f7', p: 3, group: 'later', title: 'Rewrite titles for 14 blog posts', obj: 'Make each post distinguishable in search results', owner: 'AK', due: 'Week 7', s1: 'todo', s3: 'progress' },
+  { id: 't9', f: 'f8', p: 3, group: 'later', title: 'Publish a DMARC record', obj: 'Protect reminder emails and the clinic’s domain', owner: 'SO', due: 'Week 8', s1: 'todo', s3: 'todo' }
+];
+const PEOPLE = { SO: 'Sam Okafor', LM: 'Lena Marsh', RT: 'Rui Tanaka', AK: 'Ana Kovač' };
+const GROUPS = { now: ['Now', 'Weeks 1–2 · fixes that unblock everything else'], next: ['Next', 'Weeks 3–6 · speed, local identity and booking'], later: ['Later', 'Weeks 7–8 · tidy-up'] };
+
+const CLIENTS = [
+  { name: 'Maple & Main Physiotherapy', since: 'Client since Aug 2026', stage: 'Active', done: 5, total: 9, next: 'October report ready to review', link: '#workspace', flag: true },
+  { name: 'Harbor Dental Studio', since: 'Client since Mar 2026', stage: 'Active', done: 14, total: 22, next: 'Report due 4 Nov' },
+  { name: 'Juniper Yoga Collective', since: 'Client since Jun 2026', stage: 'Active', done: 8, total: 10, next: 'Report due 6 Nov' },
+  { name: 'Kessler Plumbing & Heating', since: 'Client since Oct 2026', stage: 'Onboarding', done: 0, total: 12, next: 'Waiting on Search Console access' },
+  { name: 'Bluebird Pediatric Clinic', since: 'Client since Jan 2026', stage: 'Paused', done: 17, total: 19, next: 'Paused by client until Jan' }
+];
+const AUDITS = [
+  { name: 'Cedar Ridge Roofing', url: 'cedarridge-roofing.example', date: '24 Oct', state: 'Sent to prospect', counts: [1, 3, 4] },
+  { name: 'Ostrander Family Law', url: 'ostrander-law.example', date: '17 Oct', state: 'Draft', counts: [0, 2, 5] },
+  { name: 'Maple & Main Physiotherapy', url: 'mapleandmain-physio.example', date: '6 Aug', state: 'Won · now a client', counts: [1, 3, 2] }
+];
+/* Weekly booking requests tracked in GA4 after tracking was set up on 2 Sep (example) */
+const WEEKLY = [
+  ['2 Sep', 6], ['9 Sep', 8], ['16 Sep', 7], ['23 Sep', 9], ['30 Sep', 8], ['7 Oct', 11], ['14 Oct', 10], ['21 Oct', 12]
+];
+
+/* ---------- State ---------- */
+const state = {
+  timeline: 1,          // 1 = day 1 of plan, 3 = month 3
+  planFilter: 'all',
+  findingFilter: 'all',
+  prospectView: false,
+  status: {},           // per-timeline overrides: key `${t}:${taskId}`
+  auditRan: false
+};
+function statusOf(t, tl) { tl = tl || state.timeline; return state.status[tl + ':' + t.id] || (tl === 3 ? t.s3 : t.s1); }
+
+/* ---------- Helpers ---------- */
+const $ = (s, el) => (el || document).querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+function sevChip(sev) { return '<span class="chip sev-' + sev + '">' + SEV_SHAPE[sev] + SEV_LABEL[sev] + '</span>'; }
+function stChip(s) { return '<span class="chip st-' + s + '"><span class="dot"></span>' + STATUS[s] + '</span>'; }
+function evTag(ev) { return '<span class="ev">' + EV[ev].icon + EV[ev].label + '</span>'; }
+function example(txt) { return '<span class="example">' + (txt || 'Example data') + '</span>'; }
+function conf(n) { const w = ['', 'Low', 'Medium', 'High'][n]; return '<span class="confidence" aria-hidden="true"><i class="' + (n >= 1 ? 'on' : '') + '"></i><i class="' + (n >= 2 ? 'on' : '') + '"></i><i class="' + (n >= 3 ? 'on' : '') + '"></i></span>' + w; }
+function toast(msg) {
+  const old = $('.toast'); if (old) old.remove();
+  const t = document.createElement('div'); t.className = 'toast'; t.setAttribute('role', 'status'); t.textContent = msg;
+  document.body.appendChild(t); setTimeout(() => t.remove(), 3600);
+}
+function findingById(id) { return FINDINGS.find(f => f.id === id); }
+I.up = '<svg viewBox="0 0 10 10" aria-hidden="true"><path d="M5 1.5 9 8.5H1z" fill="currentColor"/></svg>';
+state.range = 'all';    // workspace chart range: 'all' (since tracking began) or '4w'
+let chartId = 0;
+
+/* ---------- Chart: thin line, soft glow, haloed endpoint, dotted grid ---------- */
+function lineChart(data, opts) {
+  const W = 640, H = opts.h || 220, padL = 34, padR = 64, padT = 18, padB = 30;
+  const max = opts.max || Math.ceil(Math.max.apply(null, data.map(d => d[1])) / 4) * 4;
+  const ticks = [0, max / 4, max / 2, max * 3 / 4, max];
+  const x = i => padL + (i * (W - padL - padR)) / (data.length - 1);
+  const y = v => padT + (H - padT - padB) * (1 - v / max);
+  const id = 'cg' + (++chartId);
+  let grid = '', axis = '';
+  ticks.forEach(t => { grid += '<line x1="' + padL + '" x2="' + (W - padR) + '" y1="' + y(t) + '" y2="' + y(t) + '"/>'; axis += '<text x="' + (padL - 10) + '" y="' + (y(t) + 4) + '" text-anchor="end">' + t + '</text>'; });
+  data.forEach((d, i) => { if (i % (opts.every || 1) === 0 || i === data.length - 1) axis += '<text x="' + x(i) + '" y="' + (H - 8) + '" text-anchor="middle">' + d[0] + '</text>'; });
+  const pts = data.map((d, i) => x(i) + ',' + y(d[1])).join(' ');
+  const area = 'M' + x(0) + ',' + y(0) + ' L' + pts.split(' ').join(' L') + ' L' + x(data.length - 1) + ',' + y(0) + 'Z';
+  const last = data[data.length - 1];
+  const ex = x(data.length - 1), ey = y(last[1]);
+  let marker = '';
+  if (opts.marker && opts.marker.i >= 0 && opts.marker.i < data.length) { const mx = x(opts.marker.i); marker = '<g class="marker"><line x1="' + mx + '" x2="' + mx + '" y1="' + padT + '" y2="' + (H - padB) + '"/><text x="' + (mx + 8) + '" y="' + (padT + 10) + '">' + opts.marker.label + '</text></g>'; }
+  return '<div class="chart"><svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + esc(opts.label) + '">' +
+    '<defs><linearGradient id="' + id + '" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--accent)" stop-opacity=".22"/><stop offset="1" stop-color="var(--accent)" stop-opacity="0"/></linearGradient></defs>' +
+    '<g class="grid">' + grid + '</g><g class="axis">' + axis + '</g>' + marker +
+    '<path d="' + area + '" fill="url(#' + id + ')"/>' +
+    '<polyline class="series-glow draw" pathLength="1" points="' + pts + '"/><polyline class="series draw" pathLength="1" points="' + pts + '"/>' +
+    '<circle class="halo" cx="' + ex + '" cy="' + ey + '" r="12"/><circle class="endpoint" cx="' + ex + '" cy="' + ey + '" r="5"/>' +
+    '<text class="endlabel" x="' + (ex + 18) + '" y="' + (ey + 4) + '">' + last[1] + '/wk</text>' +
+    '</svg></div>';
+}
+
+/* ---------- Navigation ---------- */
+const NAV = [
+  { h: 'dashboard', label: 'Overview', icon: I.home, match: ['dashboard'] },
+  { h: 'new-audit', label: 'Audits', icon: I.audit, match: ['new-audit', 'results', 'evidence'], count: '3' },
+  { h: 'workspace', label: 'Clients', icon: I.clients, match: ['workspace', 'plan'], count: '5' },
+  { h: 'report', label: 'Reports', icon: I.report, match: ['report'], count: '2' }
+];
+const TOUR = [
+  { h: 'dashboard', label: 'Agency dashboard' },
+  { h: 'new-audit', label: 'Start a prospect audit' },
+  { h: 'results', label: 'Audit results' },
+  { h: 'evidence', label: 'Evidence behind a finding' },
+  { h: 'plan', label: 'Prioritised action plan' },
+  { h: 'workspace', label: 'Client workspace, month 3' },
+  { h: 'report', label: 'Monthly progress report' }
+];
+function renderNav(route) {
+  $('#nav').innerHTML = NAV.map(n => '<a href="#' + n.h + '"' + (n.match.indexOf(route) > -1 ? ' aria-current="page"' : '') + '>' + n.icon + '<span>' + n.label + '</span>' + (n.count ? '<span class="count">' + n.count + '</span>' : '') + '</a>').join('');
+  $('#mobile-nav').innerHTML = NAV.map(n => '<a href="#' + n.h + '"' + (n.match.indexOf(route) > -1 ? ' aria-current="page"' : '') + '>' + n.icon + '<span>' + n.label + '</span></a>').join('');
+  const idx = TOUR.findIndex(t => t.h === route);
+  const ti = idx < 0 ? 0 : idx;
+  $('#tour-count').innerHTML = '<span class="tour-step">Step </span>' + (ti + 1) + ' of ' + TOUR.length + '<span class="tour-label"> · ' + TOUR[ti].label + '</span>';
+  $('#tour-prev').disabled = ti === 0;
+  $('#tour-next').textContent = ti === TOUR.length - 1 ? 'Restart' : 'Next';
+  $('#tour-next').dataset.target = ti === TOUR.length - 1 ? 'dashboard' : TOUR[ti + 1].h;
+  $('#tour-prev').dataset.target = ti === 0 ? 'dashboard' : TOUR[ti - 1].h;
+}
+$('#tour-next').addEventListener('click', e => go(e.currentTarget.dataset.target));
+$('#tour-prev').addEventListener('click', e => go(e.currentTarget.dataset.target));
+function go(h) { if (location.hash === '#' + h) route(); else location.hash = h; }
+
+function sectionHead(title, right, sub) {
+  return '<div class="section-head"><div><h2>' + title + '</h2>' + (sub ? '<span class="small faint">' + sub + '</span>' : '') + '</div>' + (right || '') + '</div>';
+}
+const FILMS = {
+  1: ['An audit runs', 'A web address goes in, 41 pages are scanned, and the problems are counted by severity.', 'Animation: a website address is typed and Run audit is tapped; 41 page tiles are scanned, flagged pages stand out, and they gather into 8 issues: 1 critical, 3 high, 2 medium and 2 low, with 46 of 52 checks run. Example data.'],
+  2: ['A finding becomes a plan', 'The site shrinks into evidence, the fix joins the plan and moves to done.', 'Animation: a fictional clinic website shows a leftover noindex tag in its page source, shrinks into a tilted card, the finding is added to the action plan, the task moves from to do to in progress to done, and the site returns to full size. Example data.'],
+  3: ['The monthly proof', 'From this week’s bookings out to the report, then the whole workspace.', 'Animation: the view starts on 12 booking requests this week, pulls back to the weekly chart, then the October report, then a wall of GrowthPilot screens, and returns. Example data.'],
+  4: ['Your brand on the audit', 'One switch turns the team view into a prospect report under your agency’s name.', 'Animation: the audit switches from team view, with effort and owner labels, to prospect view under the Northfield Digital name with a plain-language headline; a phone preview of the prospect report slides in, then it switches back. Example data.'],
+  5: ['The plan, month by month', 'Actions tick off as the months move from August to October.', 'Animation: the action plan steps from August to September, where four actions are marked done, then to October, where tap-to-call is done, one action waits on the clinic and two are in progress, ending at 5 of 9 done. Example data.'],
+  6: ['Proof, week by week', 'A playhead draws booking requests and drops in each fix on the week it shipped.', 'Animation: a playhead draws weekly online booking requests from 6 to 12 between 2 September and 21 October, with badges for noindex removed on 3 September, hero image compressed on 19 September and tap-to-call added on 8 October. Example data.'],
+  7: ['The report, ready to send', 'The month’s pages gather into one email to the client. In the demo, nothing is sent.', 'Animation: three report pages fan out, then gather into a stack beside an email to Maple and Main Physiotherapy; Send to client is tapped and a demo notice says nothing was sent. Example data.']
+};
+function filmFig(n, showcase, band) {
+  const f = FILMS[n];
+  return '<figure class="film-fig"><div class="film"><video data-film' + (showcase ? ' id="film-main" data-n="' + n + '"' : ' loop') + ' muted playsinline preload="metadata" poster="media/film-' + n + '-poster.jpg" aria-label="' + esc(f[2]) + '">' +
+    '<source src="media/film-' + n + '.webm" type="video/webm"><source src="media/film-' + n + '.mp4" type="video/mp4"></video>' +
+    '<button type="button" class="film-ctrl" data-film-toggle aria-label="Pause film 0' + n + ', ' + esc(f[0]) + '"></button></div>' +
+    '<figcaption class="film-cap"><div><span id="film-title-' + (showcase ? 'main' : n) + '"><b>0' + n + '</b>' + f[0] + '</span>' + (showcase || band ? '<p>Illustrative motion, example data</p>' : '<p>' + f[1] + '</p>') + '</div>' + example('Motion preview') + '</figcaption></figure>';
+}
+// the dashboard's "things need you" list as a picture carousel (scroll-snap track, buttons and dots)
+function needsCarousel(needs) {
+  return '<div class="carousel" role="region" aria-roledescription="carousel" aria-label="Things that need you this week">' +
+    '<div class="car-track" tabindex="0" aria-label="Swipe or use the buttons to move between items">' + needs.map((n, i) => {
+      const tag = n[2] ? 'a' : 'div';
+      return '<article class="car-slide" role="group" aria-roledescription="slide" aria-label="' + (i + 1) + ' of ' + needs.length + '"><' + tag + ' class="car-card"' + (n[2] ? ' href="' + n[2] + '"' : '') + '>' +
+        '<div class="car-pic"><img src="media/need-' + (i + 1) + '.jpg" alt="' + esc(n[3]) + '" width="1280" height="800"' + (i ? ' loading="lazy"' : '') + '></div>' +
+        '<div class="car-body"><span class="need-n num">0' + (i + 1) + '</span><span><span class="need-t">' + n[0] + '</span><br><span class="row-sub">' + n[1] + '</span></span>' + (n[2] ? '<span class="go">' + I.chev + '</span>' : '') + '</div>' +
+        '</' + tag + '></article>';
+    }).join('') + '</div>' +
+    '<div class="car-ctrl"><button type="button" class="car-btn car-prev" aria-label="Previous item">' + I.chev + '</button>' +
+      '<div class="car-dots">' + needs.map((n, i) => '<button type="button" class="car-dot" data-car="' + i + '" aria-label="Show item ' + (i + 1) + '"><i></i></button>').join('') + '</div>' +
+      '<span class="car-count num small muted" aria-live="polite">1 / ' + needs.length + '</span>' +
+      '<button type="button" class="car-btn car-auto" aria-label="Pause the carousel">' + PAUSE + '</button>' +
+      '<button type="button" class="car-btn car-next" aria-label="Next item">' + I.chev + '</button></div>' +
+  '</div>';
+}
+function bindCarousel() {
+  const c = $('.carousel'); if (!c) return;
+  const track = $('.car-track', c), slides = Array.from(c.querySelectorAll('.car-slide')), dots = Array.from(c.querySelectorAll('.car-dot'));
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const at = () => { const x = track.scrollLeft; let best = 0; slides.forEach((s, i) => { if (Math.abs(s.offsetLeft - slides[0].offsetLeft - x) < Math.abs(slides[best].offsetLeft - slides[0].offsetLeft - x)) best = i; }); return best; };
+  const paint = () => {
+    const i = at();
+    dots.forEach((d, k) => d.setAttribute('aria-current', k === i ? 'true' : 'false'));
+    $('.car-count', c).textContent = (i + 1) + ' / ' + slides.length;
+    $('.car-prev', c).disabled = i === 0; $('.car-next', c).disabled = i === slides.length - 1;
+  };
+  const go = i => track.scrollTo({ left: slides[Math.max(0, Math.min(slides.length - 1, i))].offsetLeft - slides[0].offsetLeft, behavior: reduce ? 'auto' : 'smooth' });
+  $('.car-prev', c).addEventListener('click', () => go(at() - 1));
+  $('.car-next', c).addEventListener('click', () => go(at() + 1));
+  dots.forEach((d, k) => d.addEventListener('click', () => go(k)));
+  track.addEventListener('keydown', e => { if (e.key === 'ArrowRight') { e.preventDefault(); go(at() + 1); } else if (e.key === 'ArrowLeft') { e.preventDefault(); go(at() - 1); } });
+  let raf = 0; track.addEventListener('scroll', () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(paint); }, { passive: true });
+  // auto-advance every 4.5 s at normal speed and loop back to the first item. It waits while hovered, focused or
+  // off screen, stops for good once the viewer pauses it, and never starts under reduced motion.
+  const DWELL = 4500, btn = $('.car-auto', c);
+  let on = !reduce, hold = false, seen = true, elapsed = 0, last = performance.now();
+  const paintAuto = () => { btn.innerHTML = on ? PAUSE : PLAY; btn.setAttribute('aria-label', (on ? 'Pause' : 'Play') + ' the carousel'); c.classList.toggle('auto', on); };
+  const tick = now => {
+    if (!document.body.contains(c)) return;                      // the screen was re-rendered
+    const dt = now - last; last = now;
+    if (on && !hold && seen && !document.hidden) elapsed += dt;
+    const cur = c.querySelector('.car-dot[aria-current="true"] i'); if (cur) cur.style.width = (on ? Math.min(1, elapsed / DWELL) * 100 : 0) + '%';
+    if (elapsed >= DWELL) { const k = at(); go(k === slides.length - 1 ? 0 : k + 1); elapsed = 0; }
+    requestAnimationFrame(tick);
+  };
+  btn.addEventListener('click', () => { on = !on; elapsed = 0; paintAuto(); });
+  [c.querySelector('.car-prev'), c.querySelector('.car-next')].concat(dots).forEach(b => b.addEventListener('click', () => { elapsed = 0; }));
+  c.addEventListener('mouseenter', () => { hold = true; }); c.addEventListener('mouseleave', () => { hold = false; });
+  c.addEventListener('focusin', e => { if (e.target !== btn) hold = true; }); c.addEventListener('focusout', () => { hold = false; });
+  if ('IntersectionObserver' in window) new IntersectionObserver(es => { seen = es[0].isIntersecting; }, { threshold: .4 }).observe(c);
+  paint(); paintAuto(); requestAnimationFrame(tick);
+}
+// a screen's own film: short copy beside one large film, below the screen's stage
+function filmBand(n) {
+  const f = FILMS[n];
+  return '<section class="film-band" aria-labelledby="fb-' + n + '"><div class="film-band-copy"><span class="eyebrow">In motion · 0' + n + '</span><h2 class="statement" id="fb-' + n + '">' + f[0] + '</h2><p class="muted">' + f[1] + '</p></div>' + filmFig(n, false, true) + '</section>';
+}
+const PLAY = '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.5v9l7.5-4.5z" fill="currentColor"/></svg>';
+const PAUSE = '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 1.5h2.5v9H2.5zM7 1.5h2.5v9H7z" fill="currentColor"/></svg>';
+let filmObserver = null;
+function bindFilms() {
+  if (filmObserver) filmObserver.disconnect();
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const vids = Array.from(document.querySelectorAll('video[data-film]'));
+  if (!vids.length) return;
+  const paint = (v, b) => { b.innerHTML = v.paused ? PLAY + 'Play' : PAUSE + 'Pause'; b.setAttribute('aria-label', b.getAttribute('aria-label').replace(/^(Pause|Play)/, v.paused ? 'Play' : 'Pause')); };
+  vids.forEach(v => {
+    const b = v.parentNode.querySelector('[data-film-toggle]');
+    v.addEventListener('play', () => paint(v, b)); v.addEventListener('pause', () => paint(v, b));
+    b.addEventListener('click', () => {
+      if (v.paused) { delete v.dataset.userPaused; v.dataset.userPlay = '1'; v.play().catch(() => {}); }
+      else { v.dataset.userPaused = '1'; delete v.dataset.userPlay; v.pause(); }
+    });
+    paint(v, b);
+  });
+  const main = $('#film-main');
+  if (main) {
+    const pick = (n, autoplay) => {
+      main.dataset.n = n;
+      main.poster = 'media/film-' + n + '-poster.jpg';
+      main.setAttribute('aria-label', FILMS[n][2]);
+      const src = main.querySelectorAll('source'); src[0].src = 'media/film-' + n + '.webm'; src[1].src = 'media/film-' + n + '.mp4';
+      $('#film-title-main').innerHTML = '<b>0' + n + '</b>' + FILMS[n][0];
+      document.querySelectorAll('[data-film-pick]').forEach(b => { b.setAttribute('aria-pressed', String(+b.dataset.filmPick === n)); b.querySelector('.film-prog i').style.width = '0'; });
+      main.parentNode.querySelector('[data-film-toggle]').setAttribute('aria-label', 'Pause film 0' + n + ', ' + FILMS[n][0]);
+      main.load();
+      if (autoplay) main.play().catch(() => {});
+    };
+    document.querySelectorAll('[data-film-pick]').forEach(b => b.addEventListener('click', () => { delete main.dataset.userPaused; main.dataset.userPlay = '1'; pick(+b.dataset.filmPick, true); }));
+    main.addEventListener('ended', () => { if (!main.dataset.userPaused) pick(+main.dataset.n % 3 + 1, true); });
+    main.addEventListener('timeupdate', () => { const bar = document.querySelector('[data-film-pick="' + main.dataset.n + '"] .film-prog i'); if (bar && main.duration) bar.style.width = (main.currentTime / main.duration * 100) + '%'; });
+  }
+  if (!('IntersectionObserver' in window)) { if (!reduce) vids.forEach(v => v.play().catch(() => {})); return; }
+  filmObserver = new IntersectionObserver(entries => entries.forEach(e => {
+    const v = e.target;
+    if (e.isIntersecting && !v.dataset.userPaused && (!reduce || v.dataset.userPlay)) v.play().catch(() => {});
+    else if (!e.isIntersecting && !v.paused) v.pause();
+  }), { threshold: .35 });
+  vids.forEach(v => filmObserver.observe(v));
+  // one-time wipe reveal of each film frame the first time it scrolls into view
+  if (reduce) return;
+  // (the figure is observed, because Chrome reports a fully clipped element as never intersecting)
+  const wipe = new IntersectionObserver(entries => entries.forEach(e => { if (e.isIntersecting) { e.target.querySelector('.film').classList.add('in'); wipe.unobserve(e.target); } }), { threshold: .15 });
+  vids.forEach(v => { const f = v.parentNode; if (!f.classList.contains('in')) { f.classList.add('wipe'); wipe.observe(f.parentNode); } });
+}
+function sevDot(sev) { return '<span class="sev-dot sev-' + sev + '" aria-hidden="true">' + SEV_SHAPE[sev] + '</span>'; }
+
+/* ---------- Views ---------- */
+function viewDashboard() {
+  const pending = TASKS.filter(t => statusOf(t, 3) !== 'done').length + 12;
+  const needs = [
+    ['Maple &amp; Main’s October report is ready to review', 'Draft ready · not sent', '#report', 'Three pages of the October report for Maple and Main Physiotherapy: back in search, before and after, and next month.'],
+    ['Cedar Ridge Roofing hasn’t replied to their audit', 'Audit sent 24 Oct', '', 'The Cedar Ridge Roofing audit card, 1 critical and 3 high issues, with a note that there has been no reply for 4 days.'],
+    ['Kessler Plumbing is still waiting on Search Console access', 'Onboarding since Oct', '', 'GrowthPilot linked to Search Console by a locked dotted line, marked waiting on the client.']
+  ];
+  return '<div class="page">' +
+  '<section class="stage" aria-label="What needs you">' +
+    '<div class="stage-copy">' +
+      '<span class="eyebrow">Tuesday 28 October 2026 · example</span>' +
+      '<h1 class="display">Good morning, Sam</h1>' +
+      '<div class="value num">3<span class="unit">things need you this week</span></div>' +
+      '<span class="change neutral">Across 5 clients and 2 open prospect audits</span>' +
+      '<div class="btn-row actions"><a class="btn primary" href="#new-audit">' + I.plus + 'New prospect audit</a><a class="btn" href="#report">Review report' + I.arrow + '</a></div>' +
+    '</div>' +
+    '<div class="stage-visual">' + needsCarousel(needs) + '</div>' +
+  '</section>' +
+
+  '<section class="section" aria-labelledby="how-h">' +
+    sectionHead('<span id="how-h">How GrowthPilot works</span>', '', 'Three short loops: audit, plan, proof. Each screen of the demo has its own film too. Illustrative motion with example data; nothing here is a recording of a real site.') +
+    '<div class="showcase"><div class="film-steps" role="group" aria-label="Choose a film">' + [1, 2, 3].map(n => '<button type="button" class="film-step" data-film-pick="' + n + '" aria-pressed="' + (n === 1) + '"><b>0' + n + '</b><strong>' + FILMS[n][0] + '</strong><span>' + FILMS[n][1] + '</span><span class="film-prog" aria-hidden="true"><i></i></span></button>').join('') + '</div>' +
+      filmFig(1, true) + '</div>' +
+  '</section>' +
+
+  '<section class="section" aria-labelledby="clients-h">' +
+    sectionHead('<span id="clients-h">Clients</span>', example()) +
+    '<div class="rows">' + CLIENTS.map(c => (c.link ? '<a class="row client-row" href="' + c.link + '">' : '<div class="row client-row">') +
+      '<div><div class="row-title">' + esc(c.name) + '</div><div class="row-sub">' + c.since + ' · ' + c.stage + '</div></div>' +
+      '<div class="prog-cell"><div class="track"><span style="width:' + Math.round(c.done / c.total * 100) + '%"></span></div><span class="num small muted">' + c.done + '/' + c.total + '</span></div>' +
+      '<div class="next small' + (c.flag ? '' : ' muted') + '"' + (c.flag ? ' style="color:var(--accent);font-weight:600"' : '') + '>' + c.next + '</div>' +
+      '<span class="go">' + (c.link ? I.chev : '') + '</span>' + (c.link ? '</a>' : '</div>')).join('') + '</div>' +
+  '</section>' +
+
+  '<div class="grid-3">' +
+    '<section class="section" aria-labelledby="audits-h">' + sectionHead('<span id="audits-h">Recent audits</span>', '<a class="btn ghost sm" href="#new-audit">New</a>') +
+      '<div class="rows">' + AUDITS.map(a => '<a class="row" style="grid-template-columns:minmax(0,1fr) auto" href="' + (a.name.indexOf('Maple') === 0 ? '#results' : '#new-audit') + '"><div><div class="row-title">' + esc(a.name) + '</div><div class="row-sub">' + a.date + ' · ' + a.state + '</div></div>' +
+        '<div style="display:flex;gap:4px">' + (a.counts[0] ? '<span class="chip sev-critical" title="Critical">' + SEV_SHAPE.critical + a.counts[0] + '</span>' : '') + '<span class="chip sev-high" title="High">' + SEV_SHAPE.high + a.counts[1] + '</span><span class="chip sev-medium" title="Medium">' + SEV_SHAPE.medium + a.counts[2] + '</span></div></a>').join('') + '</div>' +
+    '</section>' +
+    '<section class="section" aria-labelledby="recs-h">' + sectionHead('<span id="recs-h">Open recommendations</span>', '<span class="num muted">' + pending + '</span>') +
+      '<div class="rows">' +
+        '<a class="row" style="grid-template-columns:auto minmax(0,1fr)" href="#plan"><span class="prio">P2</span><div><div class="row-title">Standardise address and add structured data</div><div class="row-sub">Maple &amp; Main · waiting on client</div></div></a>' +
+        '<div class="row" style="grid-template-columns:auto minmax(0,1fr)"><span class="prio p1">P1</span><div><div class="row-title">Fix duplicate location pages</div><div class="row-sub">Harbor Dental · in progress</div></div></div>' +
+        '<div class="row" style="grid-template-columns:auto minmax(0,1fr)"><span class="prio">P2</span><div><div class="row-title">Add class schedule to Business Profile</div><div class="row-sub">Juniper Yoga · to do</div></div></div>' +
+      '</div>' +
+    '</section>' +
+    '<section class="section" aria-labelledby="reports-h">' + sectionHead('<span id="reports-h">Recent reports</span>') +
+      '<div class="rows">' +
+        '<a class="row" style="grid-template-columns:minmax(0,1fr) auto" href="#report"><div><div class="row-title">Maple &amp; Main · October</div><div class="row-sub">Draft ready · not sent</div></div><span class="go">' + I.chev + '</span></a>' +
+        '<div class="row" style="grid-template-columns:minmax(0,1fr)"><div><div class="row-title">Harbor Dental · September</div><div class="row-sub">Sent 3 Oct</div></div></div>' +
+      '</div>' +
+    '</section>' +
+  '</div></div>';
+}
+
+function viewNewAudit() {
+  const p = PROSPECT;
+  const checks = ['Whether search engines and AI search crawlers can reach and index the pages', 'Page speed in a lab test on a simulated phone', 'Business details, structured data and local consistency', 'Booking and contact paths, and whether they look tracked', 'Email authentication records'];
+  return '<div class="page">' +
+  '<section class="stage" style="align-items:center">' +
+    '<div class="stage-copy">' +
+      '<nav class="crumbs" aria-label="Breadcrumb"><a href="#dashboard">Overview</a><span>/</span><span>New prospect audit</span></nav>' +
+      '<h1 class="display">Audit a prospect’s website</h1>' +
+      '<p class="lede">GrowthPilot checks what anyone can see from outside the site, explains each problem in plain language and shows the evidence. You can send it to the prospect under your agency’s name.</p>' +
+    '</div>' +
+    '<div class="stage-visual">' + filmFig(1) + '</div>' +
+  '</section>' +
+
+  '<form id="audit-form" class="section" novalidate style="gap:48px;max-width:880px;width:100%">' +
+    '<div class="field full"><label for="f-url">Website address</label>' +
+      '<div class="url-bar"><span class="pre">https://</span><input id="f-url" name="url" value="' + esc(p.url) + '" autocomplete="off" spellcheck="false" aria-describedby="url-hint url-err">' +
+      '<button class="btn primary" id="run-btn" type="submit">Run audit' + I.arrow + '</button></div>' +
+      '<span class="hint" id="url-hint">Sample business pre-filled for the demo. Every result you’ll see is example data. Takes about 2 minutes on a real site; simulated here.</span><span class="err" id="url-err" hidden>Enter a website address, for example clinic-name.example</span></div>' +
+    '<div class="section">' + sectionHead('About the business', '', 'Used to explain findings in the prospect’s terms') +
+      '<div class="form">' +
+        '<div class="field"><label for="f-name">Business name</label><input class="input" id="f-name" value="' + esc(p.name) + '"></div>' +
+        '<div class="field"><label for="f-cat">Type of business</label><select class="input" id="f-cat"><option>Physiotherapy clinic</option><option>Dental practice</option><option>Home services</option><option>Law firm</option><option>Fitness studio</option></select></div>' +
+        '<div class="field"><label for="f-loc">Where they serve customers</label><input class="input" id="f-loc" value="' + esc(p.location) + '"></div>' +
+        '<div class="field"><label for="f-svc">Service they most want to grow</label><input class="input" id="f-svc" value="' + esc(p.service) + '"></div>' +
+        '<div class="field full"><label for="f-comp">Competitors to compare (optional)</label><input class="input" id="f-comp" value="' + esc(p.competitors) + '"><span class="hint">Used for context in the audit. Competitor comparison is outside this demo.</span></div>' +
+      '</div></div>' +
+    '<div class="section">' + sectionHead('What this audit checks') +
+      '<div class="rows">' + checks.map((c, i) => '<div class="row check-row"><span class="n">0' + (i + 1) + '</span><span>' + c + '</span></div>').join('') + '</div>' +
+      '<p class="small faint">Anything that needs the client’s accounts (Search Console, Analytics, Business Profile) is marked “Needs client access” instead of guessed.</p>' +
+    '</div>' +
+  '</form>' +
+  '<section class="run" id="run-panel" hidden aria-live="polite" style="max-width:880px;width:100%">' +
+    '<div class="head-row"><div><span class="eyebrow">Auditing</span><h2 class="statement">mapleandmain-physio.example</h2></div>' + example('Simulated') + '</div>' +
+    '<div class="value num" style="font-size:clamp(56px,7vw,88px)"><span id="run-pct">0</span><span class="unit">% of checks complete</span></div>' +
+    '<div class="meter" aria-hidden="true"><span id="run-bar"></span></div>' +
+    '<div class="run-steps" id="run-steps"></div>' +
+    '<p class="small faint">Simulated: no pages are fetched and no tests run. The demo always shows the same sample audit.</p>' +
+  '</section>' +
+  '</div>';
+}
+const RUN_STEPS = ['Fetching 41 public pages', 'Checking indexing rules on every page', 'Reading robots.txt for search and AI crawlers', 'Validating structured data and business details', 'Running a mobile lab speed test', 'Testing booking and contact paths', 'Checking email authentication records', 'Writing plain-language explanations'];
+function bindNewAudit() {
+  const form = $('#audit-form');
+  form.addEventListener('submit', e => {
+    e.preventDefault();
+    const url = $('#f-url');
+    if (!url.value.trim() || url.value.indexOf('.') < 0) { url.setAttribute('aria-invalid', 'true'); $('#url-err').hidden = false; url.focus(); return; }
+    url.removeAttribute('aria-invalid'); $('#url-err').hidden = true;
+    $('#run-btn').disabled = true; $('#run-btn').textContent = 'Running…';
+    const panel = $('#run-panel'); panel.hidden = false;
+    const fast = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    panel.scrollIntoView({ behavior: fast ? 'auto' : 'smooth', block: 'start' });
+    const box = $('#run-steps');
+    let i = 0;
+    function paint() {
+      const pct = Math.round(i / RUN_STEPS.length * 100);
+      $('#run-pct').textContent = pct; $('#run-bar').style.width = pct + '%';
+      box.innerHTML = RUN_STEPS.map((s, k) => '<div class="run-step ' + (k < i ? 'done' : k === i ? 'active' : '') + '"><span class="n">0' + (k + 1) + '</span><span class="ic"></span><span>' + s + '</span><span class="xs faint">' + (k < i ? 'done' : k === i ? 'running' : '') + '</span></div>').join('');
+    }
+    paint();
+    const tick = setInterval(() => {
+      i++; paint();
+      if (i >= RUN_STEPS.length) { clearInterval(tick); state.auditRan = true; setTimeout(() => go('results'), fast ? 50 : 450); }
+    }, fast ? 60 : 420);
+  });
+}
+
+function viewResults() {
+  const counts = { critical: 0, high: 0, medium: 0, low: 0, info: 0 };
+  FINDINGS.forEach(f => counts[f.sev]++);
+  const max = 4;
+  const pv = state.prospectView;
+  const filt = state.findingFilter;
+  const list = FINDINGS.filter(f => filt === 'all' || f.ev === filt || f.sev === filt);
+  const actionable = FINDINGS.filter(f => f.sev !== 'info').length;
+  const soft = { critical: 'var(--crit-soft)', high: 'var(--high-soft)', medium: 'var(--med-soft)', low: 'var(--low-soft)' };
+  return '<div class="page">' +
+  '<section class="stage" aria-label="Summary">' +
+    '<div class="stage-copy">' +
+      (pv ? '<div class="agency-brand"><span class="agency-logo">ND</span>Northfield Digital</div><span class="eyebrow">Website growth audit · prepared for ' + esc(PROSPECT.name) + '</span>'
+          : '<nav class="crumbs" aria-label="Breadcrumb"><a href="#dashboard">Overview</a><span>/</span><a href="#new-audit">Audits</a><span>/</span><span>Maple &amp; Main Physiotherapy</span></nav><span class="eyebrow">Audit · 28 Oct 2026 · ' + esc(PROSPECT.url) + '</span>') +
+      '<h1 class="display">' + (pv ? 'Three fixes would make your services findable again' : 'Maple &amp; Main Physiotherapy') + '</h1>' +
+      '<div class="value num">' + actionable + '<span class="unit">issues found</span></div>' +
+      '<span class="change" style="color:var(--crit)">' + SEV_SHAPE.critical + counts.critical + ' critical · ' + counts.high + ' high</span>' +
+      '<p class="say"><strong>Most of the clinic’s service pages are hidden from search, and ChatGPT search can’t read the site.</strong> <span>Both are quick fixes. Speed, tracking and booking friction come next. 46 of 52 checks ran; 6 need the clinic’s accounts.</span></p>' +
+      '<div class="btn-row actions"><div class="seg-toggle" role="group" aria-label="View as"><button type="button" data-pv="0" aria-pressed="' + !pv + '">Agency view</button><button type="button" data-pv="1" aria-pressed="' + pv + '">Prospect view</button></div>' +
+        (pv ? '' : '<a class="btn primary" href="#plan">Build action plan' + I.arrow + '</a>') + '</div>' +
+    '</div>' +
+    '<div class="stage-visual">' +
+      '<div class="head-row"><span class="small muted">Issues by severity</span>' + example() + '</div>' +
+      '<div class="spectrum" role="img" aria-label="Issues by severity: ' + counts.critical + ' critical, ' + counts.high + ' high, ' + counts.medium + ' medium, ' + counts.low + ' low">' +
+        ['critical', 'high', 'medium', 'low'].map(s => '<div class="spec"><span class="spec-n num" style="color:' + SEV_COLOR[s] + '">' + counts[s] + '</span><div class="spec-bar" style="background:' + soft[s] + '"><span style="height:' + (counts[s] / max * 100) + '%;background:' + SEV_COLOR[s] + '"></span></div><span class="spec-l" style="color:' + SEV_COLOR[s] + '">' + SEV_SHAPE[s] + SEV_LABEL[s] + '</span></div>').join('') +
+      '</div>' +
+      '<p class="xs faint">Severity combines how many visitors an issue affects with how directly it blocks enquiries. It is a judgement, not a score. One further item is for information only.</p>' +
+    '</div>' +
+  '</section>' +
+  (pv ? '' : filmBand(4)) +
+
+  '<div class="split">' +
+    '<section class="section" aria-labelledby="find-h">' +
+      sectionHead('<span id="find-h">Findings</span>', '', 'Each one opens its evidence') +
+      '<div class="chips" role="group" aria-label="Filter findings">' +
+        [['all', 'All ' + FINDINGS.length], ['critical', 'Critical'], ['high', 'High'], ['observed', 'Observed'], ['access', 'Needs access'], ['judgement', 'Judgement']].map(f => '<button type="button" class="filter" data-ff="' + f[0] + '" aria-pressed="' + (filt === f[0]) + '">' + f[1] + '</button>').join('') +
+      '</div>' +
+      '<div class="rows">' + (list.length ? list.map(f => '<button type="button" class="row finding-row" data-finding="' + f.id + '">' +
+        sevDot(f.sev) +
+        '<span class="f-body"><span class="f-meta"><span style="color:' + SEV_COLOR[f.sev] + ';font-weight:600">' + SEV_LABEL[f.sev] + '</span><span>' + f.area + '</span></span>' +
+        '<span class="f-title">' + esc(f.title) + '</span><span class="f-plain">' + esc(f.plain) + '</span>' +
+        '<span class="f-meta">' + evTag(f.ev) + (pv ? '' : '<span>Effort: ' + f.effort + '</span>') + '<span class="see">See evidence</span></span></span>' +
+        '<span class="go">' + I.chev + '</span></button>').join('') : '<p class="muted" style="padding:20px 0">No findings match this filter.</p>') + '</div>' +
+    '</section>' +
+
+    '<aside class="aside">' +
+      '<section class="section">' + sectionHead('How to read this audit') +
+        '<div class="legend">' +
+          '<div>' + evTag('observed') + '<p class="faint">We saw it directly, and the evidence is attached.</p></div>' +
+          '<div>' + evTag('access') + '<p class="faint">A likely issue we can only confirm with the client’s accounts.</p></div>' +
+          '<div>' + evTag('judgement') + '<p class="faint">A reviewer’s opinion. Worth testing, not proven.</p></div>' +
+          '<p class="faint">No audit can promise rankings, AI citations or more bookings. It shows what is blocking them.</p>' +
+        '</div></section>' +
+      (pv ? '<section class="card"><h2 class="statement">Want help fixing these?</h2><p class="muted">Northfield Digital can fix the first three in about two weeks and report back monthly on what changed.</p><button type="button" class="btn primary" id="book-call">Book a 20-minute call</button><span class="xs faint">Example call to action. The agency sets its own wording.</span></section>' :
+        '<section class="section">' + sectionHead('Next step') + '<p class="muted">Send the prospect view to Maple &amp; Main, or turn the findings into a plan once they sign.</p><div class="btn-row"><button type="button" class="btn" id="share-btn">Copy prospect link</button><a class="btn primary" href="#plan">Build action plan</a></div></section>') +
+    '</aside>' +
+  '</div></div>';
+}
+function bindResults() {
+  document.querySelectorAll('[data-pv]').forEach(b => b.addEventListener('click', () => { state.prospectView = b.dataset.pv === '1'; render('results'); }));
+  document.querySelectorAll('[data-ff]').forEach(b => b.addEventListener('click', () => { state.findingFilter = b.dataset.ff; render('results'); }));
+  document.querySelectorAll('[data-finding]').forEach(b => b.addEventListener('click', () => openEvidence(b.dataset.finding, b)));
+  const sb = $('#share-btn'); if (sb) sb.addEventListener('click', () => toast('Demo only: a real version would copy a private link to the branded prospect view.'));
+  const bc = $('#book-call'); if (bc) bc.addEventListener('click', () => toast('Demo only: this would open the agency’s own booking page.'));
+}
+
+function viewPlan() {
+  const tl = state.timeline;
+  const filt = state.planFilter;
+  const all = TASKS.map(t => ({ t: t, s: statusOf(t) }));
+  const done = all.filter(x => x.s === 'done').length;
+  const shown = all.filter(x => filt === 'all' || x.s === filt);
+  return '<div class="page">' +
+  '<section class="stage" aria-label="Plan progress">' +
+    '<div class="stage-copy">' +
+      '<nav class="crumbs" aria-label="Breadcrumb"><a href="#dashboard">Overview</a><span>/</span><a href="#workspace">Maple &amp; Main Physiotherapy</a><span>/</span><span>Action plan</span></nav>' +
+      '<span class="eyebrow">Built from the 28 Oct audit · 8 issues → 9 actions</span>' +
+      '<h1 class="display">Action plan</h1>' +
+      '<div class="value num">' + done + '<span class="unit">of ' + TASKS.length + ' actions done</span></div>' +
+      '<p class="say"><strong>' + (tl === 1 ? 'Start with the three P1 fixes. They unblock search, AI crawlers and measurement.' : 'All three P1 fixes are done. One action is waiting on the clinic.') + '</strong></p>' +
+      '<div class="btn-row actions"><a class="btn primary" href="#workspace">Open client workspace' + I.arrow + '</a></div>' +
+    '</div>' +
+    '<div class="stage-visual">' +
+      '<div class="head-row"><span class="small muted">Progress across all 9 actions</span>' + example() + '</div>' +
+      '<div class="segbar" aria-hidden="true">' + all.map(x => '<span class="' + (x.s === 'done' ? 'done' : x.s === 'progress' ? 'prog' : x.s === 'waiting' ? 'wait' : '') + '"></span>').join('') + '</div>' +
+      '<div class="seg-legend"><span><i style="background:var(--accent)"></i>Done</span><span><i style="background:var(--accent-soft);box-shadow:inset 0 0 0 1px var(--accent-line)"></i>In progress</span><span><i style="background:var(--signal-soft);box-shadow:inset 0 0 0 1px var(--signal)"></i>Waiting on client</span><span><i style="background:var(--surface-3)"></i>To do</span></div>' +
+      '<div class="head-row" style="margin-top:12px"><div class="chips" role="group" aria-label="Demo timeline"><button type="button" class="filter range" data-tl="1" aria-pressed="' + (tl === 1) + '">DAY 1</button><button type="button" class="filter range" data-tl="3" aria-pressed="' + (tl === 3) + '">MONTH 3</button></div>' +
+        '<span class="xs faint">Demo timeline: ' + (tl === 1 ? 'the day the plan is created' : 'three months later, 28 Oct 2026') + '</span></div>' +
+    '</div>' +
+  '</section>' +
+  filmBand(5) +
+
+  '<section class="section" aria-label="Actions">' +
+  '<div class="chips" role="group" aria-label="Filter by status">' +
+    [['all', 'All'], ['todo', 'To do'], ['progress', 'In progress'], ['waiting', 'Waiting on client'], ['done', 'Done']].map(f => '<button type="button" class="filter" data-pf="' + f[0] + '" aria-pressed="' + (filt === f[0]) + '">' + f[1] + '<span class="num">' + (f[0] === 'all' ? all.length : all.filter(x => x.s === f[0]).length) + '</span></button>').join('') +
+  '</div>' +
+  (shown.length ? Object.keys(GROUPS).map(g => {
+    const rows = shown.filter(x => x.t.group === g);
+    if (!rows.length) return '';
+    return '<div class="section" style="margin-top:24px">' + sectionHead(GROUPS[g][0], '', GROUPS[g][1]) + '<div class="rows">' +
+      rows.map(x => { const t = x.t, f = findingById(t.f);
+        return '<div class="row task"><span class="prio' + (t.p === 1 ? ' p1' : '') + '" title="Priority ' + t.p + '">P' + t.p + '</span>' +
+        '<div style="min-width:0"><div class="t-title">' + esc(t.title) + '</div><div class="t-obj">Goal: ' + esc(t.obj) + '</div>' +
+        '<div class="t-meta"><span style="display:inline-flex;align-items:center;gap:8px"><span class="avatar" title="' + PEOPLE[t.owner] + '">' + t.owner + '</span>' + PEOPLE[t.owner] + '</span><span>' + t.due + '</span>' +
+          '<span>From: <button type="button" class="linklike" data-finding="' + f.id + '">' + esc(SEV_LABEL[f.sev]) + ' finding</button></span>' +
+          (x.s === 'done' && tl === 3 && t.done3 ? '<span>Done ' + t.done3 + '</span>' : '') +
+          (x.s === 'waiting' && t.note3 ? '<span style="color:var(--signal)">' + esc(t.note3) + '</span>' : '') + '</div></div>' +
+        '<div class="t-status"><label class="sr" for="st-' + t.id + '">Status for ' + esc(t.title) + '</label><select class="status-select s-' + x.s + '" id="st-' + t.id + '" data-task="' + t.id + '">' +
+          Object.keys(STATUS).map(k => '<option value="' + k + '"' + (k === x.s ? ' selected' : '') + '>' + STATUS[k] + '</option>').join('') + '</select></div></div>'; }).join('') + '</div></div>';
+  }).join('') : '<p class="muted" style="padding:20px 0">No actions with this status. <button type="button" class="linklike" data-pf="all">Show all actions</button></p>') +
+  '<p class="small faint" style="margin-top:8px">Status changes are kept only while this page is open. Priorities come from severity, effort and dependencies; the agency can reorder them.</p>' +
+  '</section>' +
+  '</div>';
+}
+function bindPlan() {
+  document.querySelectorAll('[data-tl]').forEach(b => b.addEventListener('click', () => { state.timeline = +b.dataset.tl; render('plan'); }));
+  document.querySelectorAll('[data-pf]').forEach(b => b.addEventListener('click', () => { state.planFilter = b.dataset.pf; render('plan'); }));
+  document.querySelectorAll('[data-finding]').forEach(b => b.addEventListener('click', () => openEvidence(b.dataset.finding, b)));
+  document.querySelectorAll('[data-task]').forEach(s => s.addEventListener('change', () => {
+    state.status[state.timeline + ':' + s.dataset.task] = s.value;
+    const t = TASKS.find(x => x.id === s.dataset.task);
+    render('plan');
+    toast('“' + t.title + '” marked ' + STATUS[s.value].toLowerCase() + '.');
+    const again = $('#st-' + s.dataset.task); if (again) again.focus();
+  }));
+}
+
+function viewWorkspace() {
+  const all = TASKS.map(t => ({ t: t, s: statusOf(t, 3) }));
+  const done = all.filter(x => x.s === 'done').length;
+  const open = all.filter(x => x.s !== 'done');
+  const four = state.range === '4w';
+  const data = four ? WEEKLY.slice(-4) : WEEKLY;
+  const first = data[0], last = data[data.length - 1];
+  const diff = last[1] - first[1];
+  return '<div class="page">' +
+  '<section class="stage single">' +
+    '<div class="stage-copy">' +
+      '<nav class="crumbs" aria-label="Breadcrumb"><a href="#dashboard">Overview</a><span>/</span><span>Clients</span><span>/</span><span>Maple &amp; Main Physiotherapy</span></nav>' +
+      '<span class="eyebrow">Client since 6 Aug 2026 · Monthly growth retainer</span>' +
+      '<div class="head-row" style="align-items:flex-end"><h1 class="display">Maple &amp; Main Physiotherapy</h1>' +
+        '<div class="btn-row">' + example('Demo timeline: month 3') + '<a class="btn primary" href="#report">Open October report' + I.arrow + '</a></div></div>' +
+      '<nav class="tabs" aria-label="Client sections" style="margin-top:8px"><a href="#workspace" aria-current="true">Overview</a><a href="#results">Audit</a><a href="#plan">Action plan</a><a href="#report">Reports</a></nav>' +
+    '</div>' +
+  '</section>' +
+
+  '<section class="stage" aria-labelledby="chart-h" style="align-items:start">' +
+    '<div class="stage-copy">' +
+      '<span class="eyebrow" id="chart-h">Online booking requests, week of ' + last[0] + '</span>' +
+      '<div class="value num">' + last[1] + '<span class="unit">requests</span></div>' +
+      '<span class="change">' + I.up + diff + ' more than the week of ' + first[0] + '</span>' +
+      '<p class="small faint">Google Analytics key event · since tracking began 2 Sep. ' + example() + '</p>' +
+    '</div>' +
+    '<div class="stage-visual">' +
+      lineChart(data, { label: 'Weekly booking requests from ' + first[0] + ' to ' + last[0] + ', rising from ' + first[1] + ' to ' + last[1] + ' (example data)', max: 16, every: 1, marker: { i: 5 - (WEEKLY.length - data.length), label: 'Tap-to-call added' } }) +
+      '<div class="chips" role="group" aria-label="Chart range"><button type="button" class="filter range" data-range="4w" aria-pressed="' + four + '">4W</button><button type="button" class="filter range" data-range="all" aria-pressed="' + !four + '">ALL</button></div>' +
+      '<p class="chart-note">There is no comparison before 2 Sep, because these requests weren’t tracked until then. The rise follows several changes, so no single action can be credited with it.</p>' +
+    '</div>' +
+  '</section>' +
+
+  '<section class="progress-band" aria-label="Progress">' +
+    '<div class="value num">' + done + '<span class="unit">of 9</span></div>' +
+    '<p class="say"><strong>actions done. Service pages are indexable again and booking requests are now being tracked.</strong> <span>One action is waiting on the clinic’s Business Profile access.</span></p>' +
+    '<button type="button" class="btn" id="nudge-btn">Remind the clinic</button>' +
+  '</section>' +
+  filmBand(6) +
+
+  '<div class="grid-3">' +
+    '<section class="section">' + sectionHead('Audit summary', '<a class="btn ghost sm" href="#results">View audit</a>') +
+      '<div class="stats">' +
+        '<div class="stat"><b class="num">8</b><span>Issues found 6 Aug</span></div>' +
+        '<div class="stat"><b class="num" style="color:var(--accent)">4</b><span>Resolved at re-check 14 Oct</span></div>' +
+        '<div class="stat"><b class="num">4</b><span>Still open</span></div>' +
+      '</div><span class="small faint">Next automatic re-check: 11 Nov</span></section>' +
+    '<section class="section">' + sectionHead('Open actions', '<a class="btn ghost sm" href="#plan">Full plan</a>') +
+      '<div class="rows">' + open.map(x => '<div class="row" style="grid-template-columns:auto minmax(0,1fr);align-items:start"><span class="prio' + (x.t.p === 1 ? ' p1' : '') + '">P' + x.t.p + '</span><div><div class="row-title" style="font-size:15px">' + esc(x.t.title) + '</div><div style="margin-top:6px">' + stChip(x.s) + '</div></div></div>').join('') + '</div></section>' +
+    '<section class="section">' + sectionHead('Reports') + '<div class="rows">' +
+      '<a class="row" style="grid-template-columns:minmax(0,1fr) auto" href="#report"><div><div class="row-title">October 2026</div><div class="row-sub">Draft ready to review</div></div><span class="go">' + I.chev + '</span></a>' +
+      '<div class="row" style="grid-template-columns:minmax(0,1fr)"><div><div class="row-title">September 2026</div><div class="row-sub">Sent 2 Oct · example</div></div></div>' +
+      '<div class="row" style="grid-template-columns:minmax(0,1fr)"><div><div class="row-title">August 2026 · baseline audit</div><div class="row-sub">Sent 8 Aug · example</div></div></div>' +
+    '</div></section>' +
+  '</div></div>';
+}
+function bindWorkspace() {
+  $('#nudge-btn').addEventListener('click', () => toast('Demo only: no message was sent. A real version would email the clinic a reminder.'));
+  document.querySelectorAll('[data-range]').forEach(b => b.addEventListener('click', () => { state.range = b.dataset.range; render('workspace'); const again = $('[data-range="' + state.range + '"]'); if (again) again.focus(); }));
+}
+
+function viewReport() {
+  // [measure, August, October, source, optional bars [aug, oct, scale max]]
+  const rows = [
+    ['Service pages that can be indexed', '3 of 9', '9 of 9', 'GrowthPilot re-check, 14 Oct', [3, 9, 9]],
+    ['ChatGPT search crawler', 'Blocked', 'Allowed', 'robots.txt re-check, 14 Oct'],
+    ['Homepage mobile LCP (lab, lower is better)', '4.1 s', '2.3 s', 'Lab test, single run, 14 Oct', [4.1, 2.3, 4.1]],
+    ['Online booking requests', 'Not tracked', '41 in October', 'Google Analytics key event'],
+    ['Clicks from Google Search', '1,180 (Aug)', '1,262 (Oct)', 'Search Console, monthly', [1180, 1262, 1262]]
+  ];
+  return '<div class="page">' +
+  '<section class="stage single">' +
+    '<div class="stage-copy">' +
+      '<nav class="crumbs" aria-label="Breadcrumb"><a href="#workspace">Maple &amp; Main Physiotherapy</a><span>/</span><span>October 2026 report</span></nav>' +
+      '<div class="head-row" style="align-items:flex-end"><h1 class="display">October progress report</h1>' +
+      '<div class="btn-row"><span class="chip st-waiting"><span class="dot"></span>Draft · not sent</span><button type="button" class="btn" id="edit-btn">Edit draft</button><button type="button" class="btn primary" id="send-btn">Send to client</button></div></div>' +
+    '</div>' +
+  '</section>' +
+  filmBand(7) +
+
+  '<article class="report" aria-label="Report preview">' +
+    '<header class="report-head">' +
+      '<div class="head-row"><div class="agency-brand"><span class="agency-logo">ND</span>Northfield Digital</div>' + example('Example report') + '</div>' +
+      '<span class="eyebrow">Monthly report for Maple &amp; Main Physiotherapy · 1–31 Oct 2026</span>' +
+      '<h2 class="display">Your services are back in search, and we can now count online booking requests.</h2>' +
+      '<p class="lede">In October we added a tap-to-call button for mobile visitors and designed a shorter booking form. The address clean-up is waiting on Business Profile access from you. Next month we test the shorter form.</p>' +
+    '</header>' +
+
+    '<section class="report-sec"><span class="chapter"><b>01</b>Done</span><h2>Work completed since the audit</h2><ul class="done-list">' +
+      '<li><span class="d">8 Oct</span><span>Added a tap-to-call button to the mobile header.</span></li>' +
+      '<li><span class="d">19 Sep</span><span>Compressed the homepage image from 2.8 MB to 240 KB.</span></li>' +
+      '<li><span class="d">5 Sep</span><span>Allowed ChatGPT’s search crawler in robots.txt, as you asked.</span></li>' +
+      '<li><span class="d">3 Sep</span><span>Removed the noindex tag from six service pages and requested indexing.</span></li>' +
+      '<li><span class="d">2 Sep</span><span>Set up booking-request tracking in Google Analytics.</span></li>' +
+    '</ul></section>' +
+
+    '<section class="report-sec"><span class="chapter"><b>02</b>Measured</span><h2>What changed</h2><p class="muted small">Measured values, with where each one comes from. The first three are checks of the site itself; the last two come from your accounts.</p>' +
+      '<div role="table" aria-label="Measures, August and October">' +
+      rows.map(r => '<div class="ba-row" role="row"><div class="ba-m" role="rowheader"><span class="ba-name">' + r[0] + '</span><span class="xs faint">' + r[3] + '</span></div>' +
+        '<div class="ba-v" role="cell"><span class="xs faint">August</span><span class="num muted">' + r[1] + '</span></div>' +
+        '<div class="ba-v now" role="cell"><span class="xs faint">October</span><span class="num">' + r[2] + '</span></div>' +
+        (r[4] ? '<div class="ba-bars" aria-hidden="true"><i style="width:' + Math.round(r[4][0] / r[4][2] * 100) + '%"></i><i class="now" style="width:' + Math.round(r[4][1] / r[4][2] * 100) + '%"></i></div>' : '') + '</div>').join('') +
+      '</div>' +
+      '<div style="margin-top:16px">' + lineChart(WEEKLY, { label: 'Weekly booking requests, 2 Sep to 21 Oct (example data)', max: 16, every: 2, h: 190 }) + '</div>' +
+      '<p class="chart-note">Booking requests per week since tracking began. Example data.</p>' +
+    '</section>' +
+
+    '<section class="report-sec"><span class="chapter"><b>03</b>Honest reading</span><h2>What we can and can’t conclude</h2>' +
+      '<div class="callout"><ul>' +
+        '<li>The site changes above are confirmed by re-checking the site.</li>' +
+        '<li>Search clicks rose 7% from August to October. Seasonality and other factors also affect clicks, so we don’t credit this to specific work.</li>' +
+        '<li>We have no booking numbers before 2 Sep, so we can’t say whether bookings went up.</li>' +
+        '<li>The speed figure is one lab test, not your visitors’ real experience.</li>' +
+      '</ul></div></section>' +
+
+    '<section class="report-sec"><span class="chapter"><b>04</b>Open</span><h2>Still open</h2><ul class="done-list">' +
+      '<li><span class="d">Waiting</span><span>Standardise the address and add structured data. <strong>We need Business Profile access from you.</strong></span></li>' +
+      '<li><span class="d">Doing</span><span>Shorter first-step booking form (design in review).</span></li>' +
+      '<li><span class="d">Doing</span><span>New titles for 14 blog posts (6 done).</span></li>' +
+      '<li><span class="d">To do</span><span>Publish a DMARC record for your email domain.</span></li>' +
+    '</ul></section>' +
+
+    '<section class="report-sec"><span class="chapter"><b>05</b>Next</span><h2>Recommended next steps</h2><ol style="margin:0;padding-left:20px;display:flex;flex-direction:column;gap:10px">' +
+      '<li>Share Business Profile access so we can finish the address clean-up.</li>' +
+      '<li>Run the shorter booking form for at least four weeks before judging it.</li>' +
+      '<li>Re-check the site on 11 Nov and report what moved.</li>' +
+    '</ol></section>' +
+
+    '<section class="report-sec"><div class="callout ai"><h3 style="display:flex;gap:8px;align-items:center"><span style="width:16px;height:16px;display:inline-flex">' + I.spark + '</span>How AI was used in this report</h3>' +
+      '<p>GrowthPilot’s AI wrote the first draft of the summary and the plain-language explanations from the measured values above. Sam Okafor at Northfield Digital reviewed and edited every section. All numbers come from the listed sources, not from the AI.</p>' +
+      '<p class="xs faint">In this demo the text is fixed. No AI runs in the prototype.</p></div></section>' +
+  '</article>' +
+  '<p class="small faint" style="text-align:center">Made with GrowthPilot · demo prototype</p>' +
+  '</div>';
+}
+function bindReport() {
+  $('#edit-btn').addEventListener('click', () => toast('Demo only: editing is not part of this prototype.'));
+  $('#send-btn').addEventListener('click', () => {
+    const c = document.createElement('div'); c.className = 'confirm'; c.setAttribute('role', 'dialog'); c.setAttribute('aria-modal', 'true'); c.setAttribute('aria-labelledby', 'cf-h');
+    c.innerHTML = '<div class="box"><h2 id="cf-h">Send the October report?</h2><p class="muted">It goes to Dr. Priya Nair (example contact) at Maple &amp; Main, under Northfield Digital’s name.</p><p class="small faint">This is a demo. Nothing will actually be sent.</p><div class="btn-row" style="justify-content:flex-end"><button type="button" class="btn" id="cf-no">Cancel</button><button type="button" class="btn primary" id="cf-yes">Send report</button></div></div>';
+    document.body.appendChild(c); $('#cf-yes').focus();
+    const close = () => { c.remove(); $('#send-btn').focus(); };
+    $('#cf-no').addEventListener('click', close);
+    c.addEventListener('click', e => { if (e.target === c) close(); });
+    c.addEventListener('keydown', e => {
+      if (e.key === 'Escape') close();
+      if (e.key === 'Tab') { e.preventDefault(); (document.activeElement === $('#cf-yes') ? $('#cf-no') : $('#cf-yes')).focus(); }
+    });
+    $('#cf-yes').addEventListener('click', () => { c.remove(); toast('Demo: marked as sent. No email left this page.'); $('#send-btn').focus(); });
+  });
+}
+
+/* ---------- Evidence drawer ---------- */
+let lastFocus = null;
+function openEvidence(id, opener) {
+  const f = findingById(id); if (!f) return;
+  lastFocus = opener || document.activeElement;
+  const task = TASKS.find(t => t.f === f.id);
+  const layer = $('#layer');
+  layer.innerHTML = '<div class="scrim" data-close></div>' +
+  '<aside class="drawer" role="dialog" aria-modal="true" aria-labelledby="dr-h">' +
+    '<div class="drawer-top"><div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">' + sevChip(f.sev) + '<span class="xs faint">' + f.area + '</span></div><button type="button" class="icon-btn" data-close aria-label="Close">' + I.close + '</button></div>' +
+    '<div class="drawer-body">' +
+      '<header class="explain"><h2 id="dr-h">' + esc(f.title) + '</h2><p>' + esc(f.plain) + '</p>' +
+        (task && !state.prospectView ? '<div class="btn-row"><button type="button" class="btn primary sm" data-goplan>See it in the action plan' + I.arrow + '</button></div>' : '') + '</header>' +
+      '<div class="ev-block"><span class="ev-label"><b>01</b>' + EV[f.ev].icon + 'What we found · ' + EV[f.ev].label.toLowerCase() + '</span>' +
+        '<div class="observed-box"><div class="src"><span>' + esc(f.evidenceSrc) + '</span>' + example() + '</div><pre>' + f.evidence + '</pre></div>' +
+        (f.evidenceNote ? '<p class="small faint">' + esc(f.evidenceNote) + '</p>' : '') + '</div>' +
+      '<div class="ev-block"><span class="ev-label"><b>02</b>Why it matters</span><p>' + esc(f.why) + '</p>' +
+        (f.sources.length ? '<ul style="margin:0;padding-left:18px" class="small">' + f.sources.map(s => '<li><a href="' + s.u + '" target="_blank" rel="noopener">' + esc(s.t) + '</a></li>').join('') + '</ul>' : '<p class="small faint">General practice guidance; no single official source.</p>') + '</div>' +
+      '<div class="ev-block"><span class="ev-label sug"><b>03</b>' + I.flag + 'What we suggest</span><div class="suggest-box">' + esc(f.action) + '</div>' +
+        (task ? '<p class="small">In the action plan as <strong>P' + task.p + ' · ' + esc(task.title) + '</strong></p>' : '') + '</div>' +
+      (f.limits ? '<div class="ev-block"><span class="ev-label lim"><b>04</b>Limits and uncertainty</span><p>' + esc(f.limits) + '</p></div>' : '') +
+      '<dl class="kv"><dt>Confidence</dt><dd>' + conf(f.confidence) + '</dd><dt>Effort</dt><dd>' + f.effort + '</dd><dt>How this was made</dt><dd>' + esc(f.ai) + '</dd></dl>' +
+    '</div>' +
+  '</aside>';
+  layer.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', closeEvidence));
+  const gp = layer.querySelector('[data-goplan]'); if (gp) gp.addEventListener('click', () => { $('#layer').innerHTML = ''; go('plan'); });
+  layer.querySelector('.drawer').addEventListener('keydown', trap);
+  layer.querySelector('.icon-btn').focus();
+}
+function closeEvidence() {
+  $('#layer').innerHTML = '';
+  if (location.hash === '#evidence') { history.replaceState(null, '', '#results'); renderNav('results'); route.last = 'results'; }
+  if (lastFocus && document.body.contains(lastFocus)) lastFocus.focus();
+}
+function trap(e) {
+  if (e.key === 'Escape') { closeEvidence(); return; }
+  if (e.key !== 'Tab') return;
+  const els = Array.from(e.currentTarget.querySelectorAll('a[href], button'));
+  const first = els[0], last = els[els.length - 1];
+  if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+  else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+}
+
+/* ---------- Router ---------- */
+const VIEWS = {
+  dashboard: [viewDashboard, function () {}],
+  'new-audit': [viewNewAudit, bindNewAudit],
+  results: [viewResults, bindResults],
+  evidence: [viewResults, function () { bindResults(); openEvidence('f1'); }],
+  plan: [viewPlan, bindPlan],
+  workspace: [viewWorkspace, bindWorkspace],
+  report: [viewReport, bindReport]
+};
+function render(name) {
+  const v = VIEWS[name];
+  const sy = window.scrollY;
+  $('#view').classList.remove('enter');
+  $('#view').innerHTML = v[0]();
+  v[1]();
+  bindFilms();
+  bindCarousel();
+  window.scrollTo(0, sy);
+}
+function route() {
+  let name = location.hash.replace('#', '');
+  if (!VIEWS[name]) name = 'dashboard';
+  if (name === 'workspace' || name === 'report') state.timeline = 3;
+  if (name === 'plan' && ['results', 'evidence', 'new-audit'].indexOf(route.last) > -1) state.timeline = 1;
+  route.last = name;
+  $('#layer').innerHTML = '';
+  const oldToast = $('.toast'); if (oldToast) oldToast.remove();
+  renderNav(name);
+  const view = $('#view');
+  view.classList.remove('enter'); void view.offsetWidth; view.classList.add('enter');
+  view.innerHTML = VIEWS[name][0]();
+  VIEWS[name][1]();
+  bindFilms();
+  bindCarousel();
+  window.scrollTo(0, 0);
+  if (name !== 'evidence') $('#main').focus({ preventScroll: true });
+}
+window.addEventListener('hashchange', route);
+const chrome = $('#chrome');
+function onScroll() { chrome.classList.toggle('scrolled', window.scrollY > 8); }
+window.addEventListener('scroll', onScroll, { passive: true });
+onScroll();
+
+route();
+})();
+</script>
